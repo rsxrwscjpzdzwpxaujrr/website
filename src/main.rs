@@ -82,6 +82,4 @@ fn main() -> std::io::Result<()> {
     })
     .bind_ssl(config.address, builder).unwrap()
     .run()
-}/*
-*asdf
- asdf */
+}
