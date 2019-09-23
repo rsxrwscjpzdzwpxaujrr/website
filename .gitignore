@@ -1,0 +1,8 @@
+/*
+!.gitignore
+!/src/
+!/Cargo.toml
+!/template.html
+!/config.json
+!/COPYING
+!/README.md
