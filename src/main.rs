@@ -22,7 +22,8 @@ use std::{ fs, io::BufReader, error::Error };
 
 use serde::Deserialize;
 use serde_json::from_reader;    
-use actix_web::{ web, App, HttpServer, Responder, HttpResponse, middleware };
+use actix_web::{ web, App, middleware, HttpServer, Responder, HttpResponse };
+use actix_files::Files;
 use openssl::ssl::{ SslAcceptor, SslFiletype, SslMethod };
 
 struct State {
@@ -78,6 +79,7 @@ fn main() -> std::io::Result<()> {
         App::new()
             .wrap(middleware::Logger::default())
             .data(State { template: fs::read_to_string("template.html").unwrap() })
+            .service(Files::new("/static", "static/"))
             .route("/", web::get().to(index)) 
     })
     .bind_ssl(config.address, builder).unwrap()

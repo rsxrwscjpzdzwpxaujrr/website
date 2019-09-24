@@ -1,6 +1,7 @@
 /*
 !.gitignore
 !/src/
+!/static/
 !/Cargo.toml
 !/template.html
 !/config.json

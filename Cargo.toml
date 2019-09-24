@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 actix-web = { version = "1.0.7", features = ["ssl"] }
+actix-files = "0.1.4"
 time = "0.1.42"
 openssl = "0.10"
 serde_json = "1.0"
