@@ -1,0 +1,35 @@
+body, html {
+    height: 100%;
+    margin: 0px;
+    font-family: Ubuntu, sans-serif;
+    background-color: #f9f9f9;
+}
+
+.header {
+    background-image: url('/images/background.jpg');
+    background-size: 100%;
+    background-position: center 65%;
+    height: 25%;
+}
+
+h1 {
+    margin: 0px;
+    color: #ffffff;
+    position: relative;
+    padding-left: 100px;
+    top: 50%;
+    transform: translate(0, -50%);
+    font-weight: 400;
+    font-size: 42pt;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+}
+
+.h1light {
+    font-weight: 300;
+}
+
+.content {
+    padding: 48px;
+    font-size: 24pt;
+}
