@@ -48,6 +48,24 @@ h1 {
 }
 
 .content {
-    padding: 48px;
+    box-sizing: border-box;
+    min-height: 75%;
+    padding: 50px;
     font-size: 24pt;
+    padding: 50px;
+    padding-bottom: 90px;
+}
+
+.footer {
+	height: 43px;
+	margin-top: -50px;
+	background: #dedede;
+	padding-top: 6px;
+	padding-left: 20px;
+	padding-right: 20px;
+
+	font-size: 9pt;
+	line-height: 19px;
+	text-align: center;
+	color: #333333;
 }
