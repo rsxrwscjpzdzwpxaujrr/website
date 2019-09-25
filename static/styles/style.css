@@ -26,8 +26,8 @@ body, html {
 .header {
     background-image: url('/images/background.jpg');
     background-size: 100%;
-    background-position: center 65%;
-    height: 25%;
+    background-position: center 70%;
+    height: calc(10% + 80px);
 }
 
 h1 {
@@ -49,8 +49,7 @@ h1 {
 
 .content {
     box-sizing: border-box;
-    min-height: 75%;
-    padding: 50px;
+    min-height: calc(100% - (10% + 80px));
     font-size: 24pt;
     padding: 50px;
     padding-bottom: 90px;
@@ -68,4 +67,13 @@ h1 {
 	line-height: 19px;
 	text-align: center;
 	color: #333333;
+}
+
+@media (max-width: 800px) {
+    h1 { font-size: 36pt; }
+}
+
+@media (max-width: 640px) {
+    h1 { font-size: 30pt; }
+    .license { display: none; }
 }
