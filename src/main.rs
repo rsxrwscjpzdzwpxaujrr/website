@@ -21,10 +21,12 @@ extern crate time;
 use std::{ fs, io::BufReader, error::Error };
 
 use serde::Deserialize;
-use serde_json::from_reader;    
+use serde_json::from_reader;
 use actix_web::{ web, App, middleware, HttpServer, Responder, HttpResponse };
 use actix_files::Files;
 use openssl::ssl::{ SslAcceptor, SslFiletype, SslMethod };
+
+mod redirect;
 
 struct State {
     template: String,
@@ -34,7 +36,7 @@ struct State {
 struct Config {
     priv_key_file: String,
     cert_chain_file: String,
-    address: String,
+    host: String,
 }
 
 impl Config {
@@ -49,7 +51,7 @@ impl Config {
 fn index(data: web::Data<State>) -> impl Responder {
     let time = time::now();
 
-    let time_name = 
+    let time_name =
     if time.tm_wday == 5 && time.tm_mday == 13 {
         "Пятница тринадцатого ебануться"
     } else {
@@ -69,19 +71,33 @@ fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
+    let sys = actix_rt::System::new("website");
+
     let config = Config::read_from_file("config.json").unwrap();
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
 
     builder.set_private_key_file(config.priv_key_file, SslFiletype::PEM).unwrap();
     builder.set_certificate_chain_file(config.cert_chain_file).unwrap();
 
-    HttpServer::new(|| { 
+    let host = config.host.clone();
+
+    HttpServer::new(move || {
+        App::new()
+            .wrap(redirect::Redirect::new(host.clone()))
+            .wrap(middleware::Logger::default())
+    })
+    .bind(format!("{}:80", config.host))?
+    .start();
+
+    HttpServer::new(|| {
         App::new()
             .wrap(middleware::Logger::default())
             .data(State { template: fs::read_to_string("template.html").unwrap() })
             .route("/", web::get().to(index))
             .service(Files::new("/", "static/"))
     })
-    .bind_ssl(config.address, builder).unwrap()
-    .run()
+    .bind_ssl(format!("{}:443", config.host), builder)?
+    .start();
+
+    sys.run()
 }
