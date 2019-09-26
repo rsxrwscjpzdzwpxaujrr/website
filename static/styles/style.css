@@ -26,7 +26,7 @@ body, html {
 .header {
     background-image: url('/images/background.jpg');
     background-size: 100%;
-    background-position: center 70%;
+    background-position: center center;
     height: calc(10% + 80px);
 }
 
