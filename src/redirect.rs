@@ -1,15 +1,11 @@
+use std::rc::Rc;
+
 use actix_service::{ Service, Transform };
 use actix_web::{ HttpResponse, dev::ServiceRequest, dev::ServiceResponse, Error };
 use futures::future::{ ok, FutureResult };
 use futures::Poll;
 
-pub struct Redirect(String);
-
-impl Redirect {
-    pub fn new(host: String) -> Redirect {
-        Redirect(host)
-    }
-}
+pub struct Redirect(pub Rc<String>);
 
 impl<S, B> Transform<S> for Redirect
 where
@@ -31,7 +27,7 @@ where
 
 pub struct RedirectMiddleware<S> {
     service: S,
-    host: String,
+    host: Rc<String>,
 }
 
 impl<S, B> Service for RedirectMiddleware<S>

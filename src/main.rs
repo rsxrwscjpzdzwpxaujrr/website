@@ -18,7 +18,7 @@
 extern crate env_logger;
 extern crate time;
 
-use std::{ fs, io::BufReader, error::Error };
+use std::{ fs, io::BufReader, error::Error, rc::Rc };
 
 use serde::Deserialize;
 use serde_json::from_reader;
@@ -83,7 +83,7 @@ fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .wrap(redirect::Redirect::new(host.clone()))
+            .wrap(redirect::Redirect(Rc::new(host.clone())))
             .wrap(middleware::Logger::default())
     })
     .bind(format!("{}:80", config.host))?
