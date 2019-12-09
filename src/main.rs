@@ -15,18 +15,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-extern crate env_logger;
-extern crate time;
-
-use std::{ fs, io::BufReader, error::Error, rc::Rc };
+use std::{ fs, io::BufReader, error::Error };
 
 use serde::Deserialize;
 use serde_json::from_reader;
-use actix_web::{ web, App, middleware, HttpServer, Responder, HttpResponse };
+use actix_web::{ web, App, middleware, HttpServer, Responder, HttpResponse, HttpRequest };
 use actix_files::Files;
 use openssl::ssl::{ SslAcceptor, SslFiletype, SslMethod };
-
-mod redirect;
 
 struct State {
     template: String,
@@ -67,6 +62,16 @@ fn index(data: web::Data<State>) -> impl Responder {
     return HttpResponse::Ok().body(data.template.replace("{}", time_name));
 }
 
+fn redirect(req: HttpRequest, host: web::Data<String>) -> impl Responder {
+    let uri_parts: actix_web::http::uri::Parts = req.uri().to_owned().into_parts();
+
+    return HttpResponse::PermanentRedirect().header("Location",
+        format!("https://{}{}",
+            host.get_ref(),
+            uri_parts.path_and_query.unwrap().as_str())
+        ).finish();
+}
+
 fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
@@ -83,8 +88,9 @@ fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
-            .wrap(redirect::Redirect(Rc::new(host.clone())))
             .wrap(middleware::Logger::default())
+            .data(host.clone())
+            .default_service(web::route().to(redirect))
     })
     .bind(format!("{}:80", config.host))?
     .start();
