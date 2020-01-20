@@ -109,6 +109,7 @@ h2 {
 }
 
 .content {
+    line-height: 1.4;
     box-sizing: border-box;
     min-height: calc(100% - (10% + 80px));
     font-size: 12pt;
