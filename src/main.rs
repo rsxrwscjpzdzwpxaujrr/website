@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
+ * Copyright (c) 2019-2020, Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License
@@ -84,7 +84,7 @@ async fn main() -> std::io::Result<()> {
     builder.set_certificate_chain_file(config.cert_chain_file).unwrap();
 
     let host = config.host.clone();
-    let result =
+
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
@@ -92,21 +92,16 @@ async fn main() -> std::io::Result<()> {
             .default_service(web::route().to(redirect))
     })
     .bind(format!("{}:80", config.host))?
-    .run()
-    .await;
+    .run();
 
-    if result.is_ok() {
-        HttpServer::new(|| {
-            App::new()
-                .wrap(middleware::Logger::default())
-                .data(State { template: fs::read_to_string("template.html").unwrap() })
-                .route("/", web::get().to(index))
-                .service(Files::new("/", "static/"))
-        })
-        .bind_openssl(format!("{}:443", config.host), builder)?
-        .run()
-        .await
-    } else {
-        return result;
-    }
+    HttpServer::new(|| {
+        App::new()
+            .wrap(middleware::Logger::default())
+            .data(State { template: fs::read_to_string("template.html").unwrap() })
+            .route("/", web::get().to(index))
+            .service(Files::new("/", "static/"))
+    })
+    .bind_openssl(format!("{}:443", config.host), builder)?
+    .run()
+    .await
 }
