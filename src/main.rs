@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
+ * Copyright (c) 2020, Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License
@@ -43,7 +43,7 @@ impl Config {
     }
 }
 
-fn index(data: web::Data<State>) -> impl Responder {
+async fn index(data: web::Data<State>) -> impl Responder {
     let time = time::now();
 
     let time_name =
@@ -62,7 +62,7 @@ fn index(data: web::Data<State>) -> impl Responder {
     return HttpResponse::Ok().body(data.template.replace("{}", time_name));
 }
 
-fn redirect(req: HttpRequest, host: web::Data<String>) -> impl Responder {
+async fn redirect(req: HttpRequest, host: web::Data<String>) -> impl Responder {
     let uri_parts: actix_web::http::uri::Parts = req.uri().to_owned().into_parts();
 
     return HttpResponse::PermanentRedirect().header("Location",
@@ -72,11 +72,10 @@ fn redirect(req: HttpRequest, host: web::Data<String>) -> impl Responder {
         ).finish();
 }
 
-fn main() -> std::io::Result<()> {
+#[actix_rt::main]
+async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
-
-    let sys = actix_rt::System::new("website");
 
     let config = Config::read_from_file("config.json").unwrap();
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
@@ -85,7 +84,7 @@ fn main() -> std::io::Result<()> {
     builder.set_certificate_chain_file(config.cert_chain_file).unwrap();
 
     let host = config.host.clone();
-
+    let result =
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
@@ -93,17 +92,21 @@ fn main() -> std::io::Result<()> {
             .default_service(web::route().to(redirect))
     })
     .bind(format!("{}:80", config.host))?
-    .start();
+    .run()
+    .await;
 
-    HttpServer::new(|| {
-        App::new()
-            .wrap(middleware::Logger::default())
-            .data(State { template: fs::read_to_string("template.html").unwrap() })
-            .route("/", web::get().to(index))
-            .service(Files::new("/", "static/"))
-    })
-    .bind_ssl(format!("{}:443", config.host), builder)?
-    .start();
-
-    sys.run()
+    if result.is_ok() {
+        HttpServer::new(|| {
+            App::new()
+                .wrap(middleware::Logger::default())
+                .data(State { template: fs::read_to_string("template.html").unwrap() })
+                .route("/", web::get().to(index))
+                .service(Files::new("/", "static/"))
+        })
+        .bind_openssl(format!("{}:443", config.host), builder)?
+        .run()
+        .await
+    } else {
+        return result;
+    }
 }
