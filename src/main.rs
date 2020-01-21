@@ -35,7 +35,7 @@ struct Config {
 }
 
 impl Config {
-    fn read_from_file(path: &str) -> Result<Config, Box<Error>> {
+    fn read_from_file(path: &str) -> Result<Config, Box<dyn Error>> {
         let buf = BufReader::new(fs::File::open(path)?);
         let config = from_reader(buf)?;
 
@@ -51,10 +51,10 @@ async fn index(data: web::Data<State>) -> impl Responder {
         "Пятница тринадцатого ебануться"
     } else {
         match time.tm_hour {
-            06...11 => "Доброго утра",
-            12...17 => "Добрый день",
-            18...23 => "Доброго вечера",
-            00...05 => "Спокойной ночи",
+            06..=11 => "Доброго утра",
+            12..=17 => "Добрый день",
+            18..=23 => "Доброго вечера",
+            00..=05 => "Спокойной ночи",
             _ => unreachable!(),
         }
     };
