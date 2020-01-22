@@ -111,12 +111,10 @@ async fn main() -> std::io::Result<()> {
     .run();
 
     HttpServer::new(|| {
-        let mut state = State {
+        let state = State {
             post: fs::read_to_string("anketa.html").unwrap(),
             tera: tera::Tera::new("templates/**/*.html").unwrap(),
         };
-
-        state.tera.autoescape_on(vec![]);
 
         App::new()
             .wrap(middleware::Logger::default())
