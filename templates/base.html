@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" type="text/css" href="/styles/style.css">
+<title>{% block title %}Сайт Миры Странной{% endblock title %}</title>
+</head>
+<body>
+  {% block body %}
+    <div class="header">
+      {% block header %}
+        <h1><span class="h1light">Сайт</span> Миры Странной</h1>
+      {% endblock header %}
+    </div>
+    <div class="content">
+      {% block content %}
+      {% endblock content %}
+    </div>
+    <div class="footer">
+      {% block footer %}
+        &copy; 2020 Мира Странная.<br>
+        <span class="license">Этот сайт доступен по лицензии GNU AGPLv3. </span>
+        Исходный код доступен по <a href="https://github.com/mirai65536/website">этой ссылке</a>.
+      {% endblock footer %}
+    </div>
+  {% endblock body %}
+</body>
+</html>

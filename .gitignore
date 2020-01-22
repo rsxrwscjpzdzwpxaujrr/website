@@ -2,8 +2,9 @@
 !.gitignore
 !/src/
 !/static/
+!/templates/
 !/Cargo.toml
-!/template.html
+!/anketa.html
 !/config.json
 !/COPYING
 !/README.md

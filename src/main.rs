@@ -17,14 +17,15 @@
 
 use std::{ fs, io::BufReader, error::Error };
 
-use serde::Deserialize;
+use serde::{ Serialize, Deserialize };
 use serde_json::from_reader;
 use actix_web::{ web, App, middleware, HttpServer, Responder, HttpResponse, HttpRequest };
 use actix_files::Files;
 use openssl::ssl::{ SslAcceptor, SslFiletype, SslMethod };
 
 struct State {
-    template: String,
+    post: String,
+    tera: tera::Tera,
 }
 
 #[derive(Deserialize)]
@@ -59,7 +60,22 @@ async fn index(data: web::Data<State>) -> impl Responder {
         }
     };
 
-    return HttpResponse::Ok().body(data.template.replace("{}", time_name));
+    #[derive(Serialize)]
+    struct Post {
+        name: String,
+        text: String,
+    }
+
+    let mut context = tera::Context::new();
+
+    context.insert("posts", &vec![
+        Post {
+            name: String::from(format!("{} ёпте блядь", time_name)),
+            text: data.post.to_owned(),
+        }
+    ]);
+
+    return HttpResponse::Ok().body(data.tera.render("main.html", &context).unwrap());
 }
 
 async fn redirect(req: HttpRequest, host: web::Data<String>) -> impl Responder {
@@ -95,9 +111,16 @@ async fn main() -> std::io::Result<()> {
     .run();
 
     HttpServer::new(|| {
+        let mut state = State {
+            post: fs::read_to_string("anketa.html").unwrap(),
+            tera: tera::Tera::new("templates/**/*.html").unwrap(),
+        };
+
+        state.tera.autoescape_on(vec![]);
+
         App::new()
             .wrap(middleware::Logger::default())
-            .data(State { template: fs::read_to_string("template.html").unwrap() })
+            .data(state)
             .route("/", web::get().to(index))
             .service(Files::new("/", "static/"))
     })
