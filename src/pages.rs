@@ -47,7 +47,7 @@ pub async fn post_index(state: web::Data<State>, link: web::Path<String>) -> Htt
 
     let mut rows = try_500!(stmt.query(params![link.to_string()]), state);
 
-    let post = if let Ok(Some(row)) = rows.next() {
+    let post = if let Some(row) = try_500!(rows.next(), state) {
         try_500!(Post::from_row(row), state)
     } else {
         return error_404(state.clone()).await;
