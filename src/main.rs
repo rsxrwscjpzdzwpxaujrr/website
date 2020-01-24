@@ -48,11 +48,18 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    let config = Arc::new(Config::read_from_file("config.json").unwrap());
-    let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+    let config = Arc::new(Config::read_from_file("config.json")
+        .expect("Config reading failed"));
 
-    builder.set_private_key_file(&config.priv_key_file, SslFiletype::PEM).unwrap();
-    builder.set_certificate_chain_file(&config.cert_chain_file).unwrap();
+    let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls())
+        .expect("SSL Acceptor Builder creating failed");
+
+
+    builder.set_private_key_file(&config.priv_key_file, SslFiletype::PEM)
+        .expect("SSL private key file setting failed");
+
+    builder.set_certificate_chain_file(&config.cert_chain_file)
+        .expect("SSL certificate chain file setting failed");
 
     let config_temp = config.clone();
 
@@ -69,8 +76,11 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         let state = State {
-            tera: tera::Tera::new(&config_temp.templates).unwrap(),
-            conn: rusqlite::Connection::open(&config_temp.database).unwrap(),
+            tera: tera::Tera::new(&config_temp.templates)
+                .expect("Tera template rendering failed"),
+
+            conn: rusqlite::Connection::open(&config_temp.database)
+                .expect("Database opening failed"),
         };
 
         App::new()
