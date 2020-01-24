@@ -73,16 +73,31 @@ h1 {
     transform: translateY(-50%);
     font-weight: 400;
     font-size: 42pt;
+    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 h2 {
-    margin-top: 12px;
+    color: #2d2d2d;
+    margin-top: 0px;
     margin-bottom: 32px;
     margin-left: 20px;
+    margin-right: 20px;
     font-size: 24pt;
     font-weight: normal;
+}
+
+h2 a {
+    color: #2d2d2d;
+}
+
+h2 a:visited {
+    color: #555555;
+}
+
+h2 a:hover {
+    color: #d64937;
 }
 
 .button {
@@ -111,16 +126,22 @@ h2 {
 .content {
     line-height: 1.4;
     box-sizing: border-box;
-    min-height: calc(100% - (10% + 80px));
+    min-height: calc(100% - (10% + 130px));
     font-size: 12pt;
-    padding: 50px;
-    padding-bottom: 90px;
+    padding-bottom: 50px;
 }
 
 .post {
+    margin: 50px;
     padding: 32px;
     background: #f9f9f9;
     box-shadow: 0 8px 18px 0 rgba(0, 0, 0, 0.3);
+}
+
+.post .date {
+    margin-bottom: -8px;
+    color: #888888;
+    text-align: right;
 }
 
 .footer {

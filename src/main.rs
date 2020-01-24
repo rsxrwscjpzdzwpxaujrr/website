@@ -15,68 +15,21 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::{ fs, io::BufReader, error::Error };
+#[macro_use]
+mod errors;
+mod state;
+mod post;
+mod config;
+mod pages;
 
-use serde::{ Serialize, Deserialize };
-use serde_json::from_reader;
 use actix_web::{ web, App, middleware, HttpServer, Responder, HttpResponse, HttpRequest };
 use actix_files::Files;
 use openssl::ssl::{ SslAcceptor, SslFiletype, SslMethod };
 
-struct State {
-    post: String,
-    tera: tera::Tera,
-}
-
-#[derive(Deserialize)]
-struct Config {
-    priv_key_file: String,
-    cert_chain_file: String,
-    host: String,
-}
-
-impl Config {
-    fn read_from_file(path: &str) -> Result<Config, Box<dyn Error>> {
-        let buf = BufReader::new(fs::File::open(path)?);
-        let config = from_reader(buf)?;
-
-        Ok(config)
-    }
-}
-
-async fn index(data: web::Data<State>) -> impl Responder {
-    let time = time::now();
-
-    let time_name =
-    if time.tm_wday == 5 && time.tm_mday == 13 {
-        "Пятница тринадцатого ебануться"
-    } else {
-        match time.tm_hour {
-            06..=11 => "Доброго утра",
-            12..=17 => "Добрый день",
-            18..=23 => "Доброго вечера",
-            00..=05 => "Спокойной ночи",
-            _ => unreachable!(),
-        }
-    };
-
-    #[derive(Serialize)]
-    struct Post {
-        name: String,
-        text: String,
-    }
-
-    let mut context = tera::Context::new();
-
-    context.insert("posts", &vec![
-        Post {
-            name: String::from(format!("{} ёпте блядь", time_name)),
-            text: data.post.to_owned(),
-        }
-    ]);
-
-    return HttpResponse::Ok().body(data.tera.render("main.html", &context).unwrap());
-}
+use errors::*;
+use state::State;
+use config::Config;
+use pages::*;
 
 async fn redirect(req: HttpRequest, host: web::Data<String>) -> impl Responder {
     let uri_parts: actix_web::http::uri::Parts = req.uri().to_owned().into_parts();
@@ -90,37 +43,59 @@ async fn redirect(req: HttpRequest, host: web::Data<String>) -> impl Responder {
 
 #[actix_rt::main]
 async fn main() -> std::io::Result<()> {
+    use std::sync::Arc;
+
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    let config = Config::read_from_file("config.json").unwrap();
+    let config = Arc::new(Config::read_from_file("config.json").unwrap());
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
 
-    builder.set_private_key_file(config.priv_key_file, SslFiletype::PEM).unwrap();
-    builder.set_certificate_chain_file(config.cert_chain_file).unwrap();
+    builder.set_private_key_file(&config.priv_key_file, SslFiletype::PEM).unwrap();
+    builder.set_certificate_chain_file(&config.cert_chain_file).unwrap();
 
-    let host = config.host.clone();
+    let config_temp = config.clone();
 
     HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
-            .data(host.clone())
+            .data(config_temp.host.clone())
             .default_service(web::route().to(redirect))
     })
     .bind(format!("{}:80", config.host))?
     .run();
 
-    HttpServer::new(|| {
+    let config_temp = config.clone();
+
+    HttpServer::new(move || {
         let state = State {
-            post: fs::read_to_string("anketa.html").unwrap(),
-            tera: tera::Tera::new("templates/**/*.html").unwrap(),
+            tera: tera::Tera::new(&config_temp.templates).unwrap(),
+            conn: rusqlite::Connection::open(&config_temp.database).unwrap(),
         };
 
         App::new()
             .wrap(middleware::Logger::default())
             .data(state)
-            .route("/", web::get().to(index))
+            .service(web::resource("/post/{link}/")
+                .route(web::get().to(post_redirect))
+            )
+            .service(web::resource("/post/{link}")
+                .route(web::get().to(post_index))
+            )
+            .service(web::resource("/posts/")
+                .route(web::get().to(posts_redirect))
+            )
+            .service(web::resource("/posts")
+                .route(web::get().to(posts))
+            )
+            .service(web::resource("/")
+                .route(web::get().to(index))
+            )
             .service(Files::new("/", "static/"))
+            .default_service(
+                web::resource("")
+                    .route(web::get().to(error_404))
+            )
     })
     .bind_openssl(format!("{}:443", config.host), builder)?
     .run()
