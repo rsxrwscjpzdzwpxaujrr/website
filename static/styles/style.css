@@ -88,15 +88,15 @@ h2 {
     font-weight: normal;
 }
 
-h2 a {
+a {
     color: #2d2d2d;
 }
 
-h2 a:visited {
-    color: #555555;
+a:visited {
+    color: #666666;
 }
 
-h2 a:hover {
+a:hover {
     color: #d64937;
 }
 
