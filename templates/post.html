@@ -4,7 +4,7 @@
 
 {%- block content %}
   <div class="post">
-    <h2>{{ post.name }}</h2>
+    <h1 class="postname">{{ post.name }}</h1>
     {{ post.text | safe }}
     {%- if post.date != "" %}
       <p class="date">{{ post.date }}</p>

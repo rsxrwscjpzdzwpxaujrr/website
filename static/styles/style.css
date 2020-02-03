@@ -63,7 +63,7 @@ body, html {
     box-shadow: 0 8px 18px 0 rgba(0, 0, 0, 0.3);
 }
 
-h1 {
+.sitename {
     margin: 0px;
     color: #ffffff;
     position: relative;
@@ -78,7 +78,11 @@ h1 {
     -moz-osx-font-smoothing: grayscale;
 }
 
-h2 {
+.sitenamelight {
+    font-weight: 300;
+}
+
+.postname {
     color: #2d2d2d;
     margin-top: 0px;
     margin-bottom: 32px;
@@ -119,10 +123,6 @@ a:hover {
     background: #dcdcdc;
 }
 
-.h1light {
-    font-weight: 300;
-}
-
 .content {
     line-height: 1.4;
     box-sizing: border-box;
@@ -160,10 +160,10 @@ a:hover {
 }
 
 @media (max-width: 800px) {
-    h1 { font-size: 36pt; }
+    .sitename { font-size: 36pt; }
 }
 
 @media (max-width: 640px) {
-    h1 { font-size: 30pt; }
+    .sitename { font-size: 30pt; }
     .license { display: none; }
 }
