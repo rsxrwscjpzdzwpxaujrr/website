@@ -3,7 +3,7 @@
 {% block title %}{{ post.name }}{% endblock title %}
 
 {%- block content %}
-  <div class="post">
+  <div class="post shadowed">
     <h1 class="postname">{{ post.name }}</h1>
     {{ post.text | safe }}
     {%- if post.date != "" %}
