@@ -24,7 +24,7 @@ macro_rules! try_500 {
     ($e:expr, $state:expr) => {{
         match $e {
             Ok(e) => e,
-            Err(_e) => return error_500($state.clone()),
+            Err(e) => { eprintln!("Error 500: {}", e); return error_500($state.clone()) },
         }
     }};
 }
