@@ -21,6 +21,7 @@ mod state;
 mod post;
 mod config;
 mod pages;
+mod sitemap;
 
 use actix_web::{ web, App, middleware, HttpServer, Responder, HttpResponse, HttpRequest };
 use actix_files::Files;
@@ -30,6 +31,7 @@ use errors::*;
 use state::State;
 use config::Config;
 use pages::*;
+use sitemap::sitemap;
 
 async fn redirect(req: HttpRequest, host: web::Data<String>) -> impl Responder {
     let uri_parts: actix_web::http::uri::Parts = req.uri().to_owned().into_parts();
@@ -81,6 +83,8 @@ async fn main() -> std::io::Result<()> {
 
             conn: rusqlite::Connection::open(&config_temp.database)
                 .expect("Database opening failed"),
+
+            config: config_temp.clone(),
         };
 
         App::new()
@@ -97,6 +101,9 @@ async fn main() -> std::io::Result<()> {
             )
             .service(web::resource("/posts")
                 .route(web::get().to(posts))
+            )
+            .service(web::resource("/sitemap.xml")
+                .route(web::get().to(sitemap))
             )
             .service(web::resource("/")
                 .route(web::get().to(index))

@@ -15,7 +15,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::sync::Arc;
+
+use crate::config::Config;
+
 pub struct State {
     pub tera: tera::Tera,
     pub conn: rusqlite::Connection,
+    pub config: Arc<Config>,
 }

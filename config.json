@@ -3,5 +3,5 @@
     "cert_chain_file": "cert.pem",
     "host": "mira-strannaya.ru",
     "database": "db.db3",
-    "templates": "templates/**/*.html"
+    "templates": "templates/**/*"
 }

@@ -4,12 +4,10 @@
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
             http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
-<url>
-  <loc>https://mira-strannaya.ru/</loc>
-  <lastmod>2020-02-03T11:54:15+00:00</lastmod>
-</url>
-<url>
-  <loc>https://mira-strannaya.ru/post/mazemaze_0.2</loc>
-  <lastmod>2020-02-03T11:54:15+00:00</lastmod>
-</url>
+{%- for url in urls %}
+  <url>
+    <loc>{{ url.loc }}</loc>
+    {%- if url.lastmod != "" %}<lastmod>{{ url.lastmod }}</lastmod>{% endif %}
+  </url>
+{%- endfor %}
 </urlset>
