@@ -47,7 +47,7 @@ impl Url {
         };
 
         Url {
-            loc: format!("{}{}", host, link),
+            loc: format!("https://{}{}", host, link),
             lastmod: date,
         }
     }
