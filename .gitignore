@@ -2,6 +2,7 @@
 !.gitignore
 !/src/
 !/static/
+/static/images/*/**
 !/templates/
 !/Cargo.toml
 !/config.json
