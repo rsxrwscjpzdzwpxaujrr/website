@@ -81,14 +81,26 @@ body, html {
     font-weight: 300;
 }
 
-.postname {
+.postname, h3 {
     color: #2d2d2d;
+}
+
+.postname {
     margin-top: 0px;
     margin-bottom: 32px;
     margin-left: 20px;
     margin-right: 20px;
     font-size: 24pt;
     font-weight: normal;
+}
+
+.sitename a:hover {
+    color: #bebebe !important;
+}
+
+.sitename a, .sitename a:visited {
+    color: unset;
+    text-decoration: none;
 }
 
 a {
@@ -141,6 +153,12 @@ a:hover {
     margin-bottom: -8px;
     color: #888888;
     text-align: right;
+}
+
+.post img {
+    display: block;
+    margin: 32px auto;
+    max-width: 100%;
 }
 
 .footer {
