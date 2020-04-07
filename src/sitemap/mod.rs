@@ -40,7 +40,6 @@ pub async fn sitemap(state: web::Data<State>) -> HttpResponse {
     let mut urls: Vec<Url> = Vec::new();
 
     urls.push(Url::from_link("/".to_owned(), state.config.host.to_owned(), 0));
-    urls.push(Url::from_link("/posts".to_owned(), state.config.host.to_owned(), 0));
 
     while let Some(row) = try_500!(rows.next(), state) {
         urls.push(try_500!(Url::from_row(row, state.config.host.to_owned()), state));
