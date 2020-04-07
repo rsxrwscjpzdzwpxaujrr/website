@@ -110,8 +110,7 @@ async fn main() -> std::io::Result<()> {
             )
             .service(Files::new("/", "static/"))
             .default_service(
-                web::resource("")
-                    .route(web::get().to(error_404))
+                web::get().to(error_404)
             )
     })
     .bind_openssl(format!("{}:443", config.host), builder)?
