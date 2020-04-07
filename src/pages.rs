@@ -92,6 +92,6 @@ pub async fn posts(state: web::Data<State>) -> impl Responder {
     return HttpResponse::Ok().body(try_500!(state.tera.render("posts.html", &context), state));
 }
 
-pub async fn index(state: web::Data<State>) -> HttpResponse {
-    return post_index(state, web::Path::from(String::from("anketa"))).await;
+pub async fn index(state: web::Data<State>) -> impl Responder {
+    return posts(state).await;
 }
