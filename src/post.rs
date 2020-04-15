@@ -25,7 +25,7 @@ pub struct Post {
     pub link: String,
     pub name: String,
     pub text: String,
-    pub short_text: String,
+    pub short_text: Option<String>,
     pub date: String,
 }
 
