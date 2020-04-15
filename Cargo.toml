@@ -11,7 +11,7 @@ actix-web = { version = "2.0", features = ["openssl"] }
 actix-files = "0.2"
 actix-rt = "1"
 tera = "1.0"
-rusqlite = "0.21"
+rusqlite = "0.22"
 chrono = "0.4"
 time = "0.1"
 openssl = "0.10"
