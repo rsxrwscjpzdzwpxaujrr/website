@@ -9,7 +9,7 @@
       {%- else %}
         {{ post.text | safe }}
       {%- endif %}
-      {%- if post.date != "" %}
+      {%- if post.date %}
         <p class="date">{{ post.date }}</p>
       {%- endif %}
     </div>

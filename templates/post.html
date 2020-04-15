@@ -6,7 +6,7 @@
   <div class="post shadowed">
     <h1 class="postname">{{ post.name }}</h1>
     {{ post.text | safe }}
-    {%- if post.date != "" %}
+    {%- if post.date %}
       <p class="date">{{ post.date }}</p>
     {%- endif %}
   </div>

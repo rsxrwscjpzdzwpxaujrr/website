@@ -26,7 +26,7 @@ pub struct Post {
     pub name: String,
     pub text: String,
     pub short_text: Option<String>,
-    pub date: String,
+    pub date: Option<String>,
 }
 
 impl Post {
@@ -34,13 +34,15 @@ impl Post {
         let timestamp = row.get(4)?;
 
         let date = if timestamp > 0 {
-            DateTime::<Utc>::from_utc(
-                NaiveDateTime::from_timestamp(timestamp, 0), Utc
+            Some(
+                DateTime::<Utc>::from_utc(
+                    NaiveDateTime::from_timestamp(timestamp, 0), Utc
+                )
+                .format("%d.%m.%Y %H:%M UTC")
+                .to_string()
             )
-            .format("%d.%m.%Y %H:%M UTC")
-            .to_string()
         } else {
-            String::from("")
+            None
         };
 
         Ok(Post {
