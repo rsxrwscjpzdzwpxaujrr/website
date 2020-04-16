@@ -17,38 +17,52 @@
 
 use std::error::Error;
 
-use chrono::{ DateTime, NaiveDateTime, Utc };
-use serde::Serialize;
+use chrono::{ DateTime, Utc };
+use serde:: { Serializer, Serialize };
 use rusqlite::{ Row };
+
+use crate::post::PostDate;
 
 #[derive(Serialize)]
 pub struct Url {
     pub loc: String,
-    pub lastmod: String,
+    pub lastmod: Option<SitemapDate>,
+}
+
+pub struct SitemapDate(DateTime<Utc>);
+
+impl SitemapDate {
+    pub fn from_timestamp(timestamp: i64) -> Option<SitemapDate> {
+        Some(SitemapDate(PostDate::from_timestamp(timestamp)?.0))
+    }
+}
+
+impl Serialize for SitemapDate {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+    {
+        serializer.serialize_str(&self.0.format("%Y-%m-%dT%H:%M+00:00").to_string())
+    }
 }
 
 impl Url {
     pub fn from_row(row: &Row, host: String) -> Result<Url, Box<dyn Error>> {
         let link: String = row.get(0)?;
-        let lastmod: i32 = row.get(1)?;
+        let date: i64 = row.get(1)?;
+        let mut lastmod: i64 = row.get(2)?;
+
+        if lastmod == 0 {
+            lastmod = date;
+        }
 
         Ok(Url::from_link(format!("/post/{}", link), host, lastmod))
     }
 
-    pub fn from_link(link: String, host: String, lastmod: i32) -> Url {
-        let date = if lastmod > 0 {
-            DateTime::<Utc>::from_utc(
-                NaiveDateTime::from_timestamp(lastmod as i64, 0), Utc
-            )
-            .format("%Y-%m-%dT%H:%M+00:00")
-            .to_string()
-        } else {
-            String::from("")
-        };
-
+    pub fn from_link(link: String, host: String, lastmod: i64) -> Url {
         Url {
             loc: format!("https://{}{}", host, link),
-            lastmod: date,
+            lastmod: SitemapDate::from_timestamp(lastmod),
         }
     }
 }

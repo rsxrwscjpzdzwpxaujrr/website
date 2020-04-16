@@ -31,7 +31,8 @@ pub async fn sitemap(state: web::Data<State>) -> HttpResponse {
     let mut stmt = try_500!(state.conn.prepare("
         SELECT
             link,
-            date
+            date,
+            lastmod
         FROM
             posts
     "), state);

@@ -30,7 +30,7 @@ pub struct Post {
     pub lastmod: Option<PostDate>,
 }
 
-pub struct PostDate(DateTime<Utc>);
+pub struct PostDate(pub DateTime<Utc>);
 
 impl PostDate {
     pub fn from_timestamp(timestamp: i64) -> Option<PostDate> {
