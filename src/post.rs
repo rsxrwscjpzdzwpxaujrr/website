@@ -31,6 +31,18 @@ pub struct Post {
 
 pub struct PostDate(DateTime<Utc>);
 
+impl PostDate {
+    pub fn from_timestamp(timestamp: i64) -> Option<PostDate> {
+        if timestamp > 0 {
+            Some(PostDate(DateTime::<Utc>::from_utc(
+                NaiveDateTime::from_timestamp(timestamp, 0), Utc)
+            ))
+        } else {
+            None
+        }
+    }
+}
+
 impl Serialize for PostDate {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -42,22 +54,12 @@ impl Serialize for PostDate {
 
 impl Post {
     pub fn from_row(row: &Row) -> Result<Post, Box<dyn Error>> {
-        let timestamp = row.get(4)?;
-
-        let date = if timestamp > 0 {
-            Some(PostDate(DateTime::<Utc>::from_utc(
-                NaiveDateTime::from_timestamp(timestamp, 0), Utc)
-            ))
-        } else {
-            None
-        };
-
         Ok(Post {
             link: row.get(0)?,
             name: row.get(1)?,
             text: row.get(2)?,
             short_text: row.get(3)?,
-            date: date,
+            date: PostDate::from_timestamp(row.get(4)?),
         })
     }
 }
