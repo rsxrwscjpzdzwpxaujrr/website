@@ -35,6 +35,8 @@ pub async fn sitemap(state: web::Data<State>) -> HttpResponse {
             lastmod
         FROM
             posts
+        WHERE
+            hidden=0
     "), state);
 
     let mut rows = try_500!(stmt.query(NO_PARAMS), state);

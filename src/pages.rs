@@ -66,6 +66,8 @@ pub async fn posts(state: web::Data<State>) -> impl Responder {
         SELECT *
         FROM
             posts
+        WHERE
+            hidden=0
         ORDER BY
             date DESC
     "), state);
