@@ -5,6 +5,7 @@
 /static/images/*/**
 !/templates/
 !/Cargo.toml
+!/dbexample.db3
 !/config.json
 !/COPYING
 !/README.md
