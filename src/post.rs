@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use serde::Serialize;
+use serde::{ Serialize, Serializer };
 use std::error::Error;
 use rusqlite::Row;
 use chrono::{ DateTime, NaiveDateTime, Utc };
@@ -26,7 +26,18 @@ pub struct Post {
     pub name: String,
     pub text: String,
     pub short_text: Option<String>,
-    pub date: Option<String>,
+    pub date: Option<PostDate>,
+}
+
+pub struct PostDate(DateTime<Utc>);
+
+impl Serialize for PostDate {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_str(&self.0.format("%d.%m.%Y %H:%M UTC").to_string())
+    }
 }
 
 impl Post {
@@ -34,13 +45,9 @@ impl Post {
         let timestamp = row.get(4)?;
 
         let date = if timestamp > 0 {
-            Some(
-                DateTime::<Utc>::from_utc(
-                    NaiveDateTime::from_timestamp(timestamp, 0), Utc
-                )
-                .format("%d.%m.%Y %H:%M UTC")
-                .to_string()
-            )
+            Some(PostDate(DateTime::<Utc>::from_utc(
+                NaiveDateTime::from_timestamp(timestamp, 0), Utc)
+            ))
         } else {
             None
         };
