@@ -30,6 +30,33 @@ pub async fn sitemap(state: web::Data<State>) -> HttpResponse {
 
     let mut stmt = try_500!(state.conn.prepare("
         SELECT
+            MAX(date),
+            MAX(lastmod)
+        FROM
+            posts
+        WHERE
+            hidden=0
+    "), state);
+
+    let mut rows = try_500!(stmt.query(NO_PARAMS), state);
+    let row = try_500!(rows.next(), state);
+    let mut urls: Vec<Url> = Vec::new();
+
+    let newest = match row {
+        Some(row) => {
+            let max_date = try_500!(row.get(0), state);
+            let max_lastmod = try_500!(row.get(1), state);
+
+            if max_date > max_lastmod { max_date } else { max_lastmod }
+        }
+
+        None => 0
+    };
+
+    urls.push(Url::from_link("/".to_owned(), state.config.host.to_owned(), newest));
+
+    let mut stmt = try_500!(state.conn.prepare("
+        SELECT
             link,
             date,
             lastmod
@@ -40,9 +67,6 @@ pub async fn sitemap(state: web::Data<State>) -> HttpResponse {
     "), state);
 
     let mut rows = try_500!(stmt.query(NO_PARAMS), state);
-    let mut urls: Vec<Url> = Vec::new();
-
-    urls.push(Url::from_link("/".to_owned(), state.config.host.to_owned(), 0));
 
     while let Some(row) = try_500!(rows.next(), state) {
         urls.push(try_500!(Url::from_row(row, state.config.host.to_owned()), state));
