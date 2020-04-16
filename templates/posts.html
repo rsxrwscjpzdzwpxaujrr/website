@@ -10,7 +10,7 @@
         {{ post.text | safe }}
       {%- endif %}
       {%- if post.date %}
-        <p class="date">{{ post.date }}</p>
+        <p class="date">{{ post.date }} UTC</p>
       {%- endif %}
     </div>
   {%- endfor %}

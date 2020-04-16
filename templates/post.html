@@ -7,7 +7,7 @@
     <h1 class="postname">{{ post.name }}</h1>
     {{ post.text | safe }}
     {%- if post.date %}
-      <p class="date">{{ post.date }}</p>
+      <p class="date">{{ post.date }} UTC{% if post.lastmod %}<span class="small"> (ред. {{ post.lastmod }})</span>{% endif %}</p>
     {%- endif %}
   </div>
 {%- endblock content %}

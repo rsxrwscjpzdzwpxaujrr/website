@@ -27,6 +27,7 @@ pub struct Post {
     pub text: String,
     pub short_text: Option<String>,
     pub date: Option<PostDate>,
+    pub lastmod: Option<PostDate>,
 }
 
 pub struct PostDate(DateTime<Utc>);
@@ -48,7 +49,7 @@ impl Serialize for PostDate {
     where
         S: Serializer,
     {
-        serializer.serialize_str(&self.0.format("%d.%m.%Y %H:%M UTC").to_string())
+        serializer.serialize_str(&self.0.format("%d.%m.%Y %H:%M").to_string())
     }
 }
 
@@ -60,6 +61,7 @@ impl Post {
             text: row.get(2)?,
             short_text: row.get(3)?,
             date: PostDate::from_timestamp(row.get(4)?),
+            lastmod: PostDate::from_timestamp(row.get(5)?),
         })
     }
 }

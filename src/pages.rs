@@ -33,12 +33,7 @@ pub async fn post_index(state: web::Data<State>, link: web::Path<String>) -> Htt
     let mut context = Context::new();
 
     let mut stmt = try_500!(state.conn.prepare("
-        SELECT
-            link,
-            name,
-            text,
-            short_text,
-            date
+        SELECT *
         FROM
             posts
         WHERE
@@ -68,12 +63,7 @@ pub async fn posts(state: web::Data<State>) -> impl Responder {
     let mut context = Context::new();
 
     let mut stmt = try_500!(state.conn.prepare("
-        SELECT
-            link,
-            name,
-            text,
-            short_text,
-            date
+        SELECT *
         FROM
             posts
         ORDER BY
