@@ -56,7 +56,7 @@ impl Url {
             lastmod = date;
         }
 
-        Ok(Url::from_link(format!("/post/{}", link), host, lastmod))
+        Ok(Url::from_link(format!("/articles/{}", link), host, lastmod))
     }
 
     pub fn from_link(link: String, host: String, lastmod: i64) -> Url {
