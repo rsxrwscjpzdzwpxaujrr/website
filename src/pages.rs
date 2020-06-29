@@ -23,13 +23,13 @@ use crate::errors::*;
 use crate::state::State;
 use crate::post::Post;
 
-pub async fn post_redirect(link: web::Path<String>) -> impl Responder {
+pub async fn article_redirect(link: web::Path<String>) -> impl Responder {
     return HttpResponse::PermanentRedirect()
-        .header("Location", format!("/post/{}", link))
+        .header("Location", format!("/articles/{}", link))
         .finish();
 }
 
-pub async fn post_index(state: web::Data<State>, link: web::Path<String>) -> HttpResponse {
+pub async fn article_index(state: web::Data<State>, link: web::Path<String>) -> HttpResponse {
     let mut context = Context::new();
 
     let mut stmt = try_500!(state.conn.prepare("
@@ -53,13 +53,13 @@ pub async fn post_index(state: web::Data<State>, link: web::Path<String>) -> Htt
     return HttpResponse::Ok().body(try_500!(state.tera.render("post.html", &context), state));
 }
 
-pub async fn posts_redirect() -> impl Responder {
+pub async fn articles_redirect() -> impl Responder {
     return HttpResponse::PermanentRedirect()
-        .header("Location", "/posts")
+        .header("Location", "/articles")
         .finish();
 }
 
-pub async fn posts(state: web::Data<State>) -> impl Responder {
+pub async fn articles(state: web::Data<State>) -> impl Responder {
     let mut context = Context::new();
 
     let mut stmt = try_500!(state.conn.prepare("
@@ -84,6 +84,18 @@ pub async fn posts(state: web::Data<State>) -> impl Responder {
     return HttpResponse::Ok().body(try_500!(state.tera.render("posts.html", &context), state));
 }
 
+pub async fn post_index(link: web::Path<String>) -> HttpResponse {
+    return HttpResponse::PermanentRedirect()
+        .header("Location", format!("/articles/{}", link))
+        .finish();
+}
+
+pub async fn posts() -> impl Responder {
+    return HttpResponse::PermanentRedirect()
+        .header("Location", "/articles")
+        .finish();
+}
+
 pub async fn index(state: web::Data<State>) -> impl Responder {
-    return posts(state).await;
+    return articles(state).await;
 }
