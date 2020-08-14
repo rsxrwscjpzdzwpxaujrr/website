@@ -40,8 +40,6 @@ pub async fn article_index(state: web::Data<State>, link: web::Path<String>) -> 
             link=?
     "), state);
 
-    println!("watafaaaa {}", link);
-
     let mut rows = try_500!(stmt.query(params![link.to_string()]), state);
 
     let post = if let Some(row) = try_500!(rows.next(), state) {
@@ -72,8 +70,6 @@ pub async fn hidden_article_index(state: web::Data<State>,
         WHERE
             link=?
     "), state);
-
-    println!("{}", link);
 
     let mut rows = try_500!(stmt.query(params![link.to_string()]), state);
 
