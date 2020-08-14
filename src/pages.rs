@@ -35,10 +35,45 @@ pub async fn article_index(state: web::Data<State>, link: web::Path<String>) -> 
     let mut stmt = try_500!(state.conn.prepare("
         SELECT *
         FROM
-            posts
+            articles
         WHERE
             link=?
     "), state);
+
+    println!("watafaaaa {}", link);
+
+    let mut rows = try_500!(stmt.query(params![link.to_string()]), state);
+
+    let post = if let Some(row) = try_500!(rows.next(), state) {
+        try_500!(Post::from_row(row), state)
+    } else {
+        return error_404(state.clone()).await;
+    };
+
+    context.insert("post", &post);
+
+    return HttpResponse::Ok().body(try_500!(state.tera.render("post.html", &context), state));
+}
+
+pub async fn hidden_article_redirect(link: web::Path<String>) -> impl Responder {
+    return HttpResponse::PermanentRedirect()
+        .header("Location", format!("/articles/hidden/{}", link))
+        .finish();
+}
+
+pub async fn hidden_article_index(state: web::Data<State>,
+                                  link: web::Path<String>) -> HttpResponse {
+    let mut context = Context::new();
+
+    let mut stmt = try_500!(state.conn.prepare("
+        SELECT *
+        FROM
+            hidden_articles
+        WHERE
+            link=?
+    "), state);
+
+    println!("{}", link);
 
     let mut rows = try_500!(stmt.query(params![link.to_string()]), state);
 
@@ -65,9 +100,9 @@ pub async fn articles(state: web::Data<State>) -> impl Responder {
     let mut stmt = try_500!(state.conn.prepare("
         SELECT *
         FROM
-            posts
+            articles
         WHERE
-            hidden=0
+            dnshow=0
         ORDER BY
             date DESC
     "), state);

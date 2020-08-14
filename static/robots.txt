@@ -1,0 +1,3 @@
+User-agent: *
+Disallow: /articles/hidden/
+Sitemap: https://mira-strannaya.ru/sitemap.xml

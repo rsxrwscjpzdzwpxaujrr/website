@@ -55,13 +55,26 @@ impl Serialize for PostDate {
 
 impl Post {
     pub fn from_row(row: &Row) -> Result<Post, Box<dyn Error>> {
-        Ok(Post {
-            link: row.get(0)?,
-            name: row.get(1)?,
-            text: row.get(2)?,
-            short_text: row.get(3)?,
-            date: PostDate::from_timestamp(row.get(4)?),
-            lastmod: PostDate::from_timestamp(row.get(5)?),
-        })
+        if row.column_count() == 7 {
+            Ok(Post {
+                link: row.get(0)?,
+                name: row.get(1)?,
+                text: row.get(2)?,
+                short_text: row.get(3)?,
+                date: PostDate::from_timestamp(row.get(4)?),
+                lastmod: PostDate::from_timestamp(row.get(5)?),
+            })
+        } else if row.column_count() == 5 {
+            Ok(Post {
+                link: row.get(0)?,
+                name: row.get(1)?,
+                text: row.get(2)?,
+                short_text: None,
+                date: PostDate::from_timestamp(row.get(3)?),
+                lastmod: PostDate::from_timestamp(row.get(4)?),
+            })
+        } else {
+            Err("Invalid column count in the row".into())
+        }
     }
 }
