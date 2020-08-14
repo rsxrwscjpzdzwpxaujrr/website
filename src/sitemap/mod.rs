@@ -33,9 +33,7 @@ pub async fn sitemap(state: web::Data<State>) -> HttpResponse {
             MAX(date),
             MAX(lastmod)
         FROM
-            posts
-        WHERE
-            hidden=0
+            articles
     "), state);
 
     let mut rows = try_500!(stmt.query(NO_PARAMS), state);
@@ -61,9 +59,7 @@ pub async fn sitemap(state: web::Data<State>) -> HttpResponse {
             date,
             lastmod
         FROM
-            posts
-        WHERE
-            hidden=0
+            articles
     "), state);
 
     let mut rows = try_500!(stmt.query(NO_PARAMS), state);
