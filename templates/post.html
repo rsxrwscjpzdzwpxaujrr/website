@@ -8,6 +8,8 @@
     {{ post.text | safe }}
     {%- if post.date %}
       <p class="date">{{ post.date }} UTC{% if post.lastmod %}<span class="small"> (ред. {{ post.lastmod }})</span>{% endif %}</p>
+    {%- elif post.lastmod %}
+      <p class="date">ред. {{ post.lastmod }} UTC</p>
     {%- endif %}
   </div>
 {%- endblock content %}
