@@ -25,7 +25,7 @@ use crate::sitemap::url::Url;
 
 mod url;
 
-pub async fn sitemap(state: web::Data<State>) -> HttpResponse {
+pub async fn sitemap(state: web::Data<State<'_>>) -> HttpResponse {
     let mut context = Context::new();
 
     let mut stmt = try_500!(state.conn.prepare("

@@ -29,7 +29,7 @@ macro_rules! try_500 {
     }};
 }
 
-pub async fn error_404(state: web::Data<State>) -> HttpResponse {
+pub async fn error_404(state: web::Data<State<'_>>) -> HttpResponse {
     let context = Context::new();
 
     return HttpResponse::NotFound()
@@ -40,7 +40,7 @@ fn error_emergency_500() -> HttpResponse {
     return HttpResponse::InternalServerError().body("500 Internal Server Error");
 }
 
-pub fn error_500(state: web::Data<State>) -> HttpResponse {
+pub fn error_500(state: web::Data<State<'_>>) -> HttpResponse {
     let context = Context::new();
 
     if let Ok(body) = state.tera.render("500.html", &context) {

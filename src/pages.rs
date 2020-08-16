@@ -18,6 +18,7 @@
 use actix_web::{ web, Responder, HttpResponse };
 use tera::Context;
 use rusqlite::{ params, NO_PARAMS };
+use serde::Deserialize;
 
 use crate::errors::*;
 use crate::state::State;
@@ -29,10 +30,10 @@ pub async fn article_redirect(link: web::Path<String>) -> impl Responder {
         .finish();
 }
 
-pub async fn article_index(state: web::Data<State>, link: web::Path<String>) -> HttpResponse {
+pub async fn article_index(state: web::Data<State<'_>>, link: web::Path<String>) -> HttpResponse {
     let mut context = Context::new();
 
-    let mut stmt = try_500!(state.conn.prepare("
+        let mut stmt = try_500!(state.conn.prepare("
         SELECT *
         FROM
             articles
@@ -59,7 +60,7 @@ pub async fn hidden_article_redirect(link: web::Path<String>) -> impl Responder 
         .finish();
 }
 
-pub async fn hidden_article_index(state: web::Data<State>,
+pub async fn hidden_article_index(state: web::Data<State<'_>>,
                                   link: web::Path<String>) -> HttpResponse {
     let mut context = Context::new();
 
@@ -90,7 +91,7 @@ pub async fn articles_redirect() -> impl Responder {
         .finish();
 }
 
-pub async fn articles(state: web::Data<State>) -> impl Responder {
+pub async fn articles(state: web::Data<State<'_>>) -> impl Responder {
     let mut context = Context::new();
 
     let mut stmt = try_500!(state.conn.prepare("
@@ -127,6 +128,32 @@ pub async fn posts() -> impl Responder {
         .finish();
 }
 
-pub async fn index(state: web::Data<State>) -> impl Responder {
+pub async fn index(state: web::Data<State<'_>>) -> impl Responder {
     return articles(state).await;
+}
+
+pub async fn auth(state: web::Data<State<'_>>) -> HttpResponse {
+    let context = Context::new();
+
+    return HttpResponse::Ok().body(try_500!(state.tera.render("auth.html", &context), state));
+}
+
+#[derive(Deserialize)]
+pub struct AuthFormData {
+    token: String,
+}
+
+pub async fn auth_submit(state: web::Data<State<'_>>,
+                         form: web::Form<AuthFormData>) -> HttpResponse {
+    let mut response = HttpResponse::SeeOther()
+        .header("Location", "/")
+        .finish();
+
+    let mut auth = state.auth.lock().unwrap();
+
+    if auth.auth(form.token.clone()) {
+        try_500!(response.add_cookie(auth.cookie()), state);
+    }
+
+    response
 }

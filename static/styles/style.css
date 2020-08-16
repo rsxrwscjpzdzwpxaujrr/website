@@ -184,6 +184,19 @@ a:hover {
     color: #333333;
 }
 
+input[type=text] {
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    background-color: #efefef;
+    box-sizing: border-box;
+}
+
+input[type=submit] {
+    padding: 16px 64px;
+    line-height: 16px;
+}
+
 .shadowed {
     box-shadow: 0 8px 18px 0 rgba(0, 0, 0, 0.3);
 }

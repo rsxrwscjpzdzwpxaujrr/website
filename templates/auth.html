@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{%- block content %}
+  <div class="post shadowed">
+    <h1 class="postname">Авторизация</h1>
+    <form action="/auth" method="post">
+      <p>
+        <label for="token">Введите токен:</label>
+      </p>
+      <p>
+        <input type="text" id="token" name="token">
+      </p>
+      <p style="text-align: right; margin-bottom: 0px">
+        <input class="button" type="submit" value="Войти">
+      </p>
+    </form>
+  </div>
+{%- endblock content %}

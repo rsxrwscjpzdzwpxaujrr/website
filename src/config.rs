@@ -26,6 +26,7 @@ pub struct Config {
     pub host: String,
     pub database: String,
     pub templates: String,
+    pub token: String,
 }
 
 impl Config {
