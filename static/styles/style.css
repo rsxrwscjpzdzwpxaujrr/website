@@ -122,11 +122,12 @@ a:hover {
 
 .headerlinks {
     text-align: right;
-    transform: translateY(-150%);
+    transform: translateY(-165%);
     box-sizing: border-box;
     margin-bottom: -12pt;
-    font-size: 12pt;
     margin-right: 24px;
+    font-size: 12pt;
+    line-height: 1;
 }
 
 .headerlinks a, .auth a:visited {
