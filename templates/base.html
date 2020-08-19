@@ -7,8 +7,8 @@
 </head>
 <body>
   {%- block body %}
-    <div class="header shadowed">
-      {%- block header %}
+    {%- block header %}
+      <div class="header shadowed">
         <h2 class="sitename">
           <span class="sitenamelight">
             <a title="На главную" href="/">
@@ -19,8 +19,13 @@
             Миры Странной
           </a>
         </h2>
-      {%- endblock header %}
-    </div>
+      </div>
+      {%- block headerlinks %}
+        <div class="headerlinks">
+          {% if authorized %}<a href="/deauth">Выйти</a>{% else %}<a href="/auth">Войти</a>{% endif %}
+        </div>
+      {%- endblock headerlinks %}
+    {%- endblock header %}
     <div class="content">
       {%- block content %}
       {%- endblock content %}

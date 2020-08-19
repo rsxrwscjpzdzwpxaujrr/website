@@ -34,7 +34,7 @@ use state::State;
 use config::Config;
 use pages::*;
 use sitemap::sitemap;
-use crate::auth::Auth;
+use crate::auth::*;
 
 async fn redirect(req: HttpRequest, host: web::Data<String>) -> impl Responder {
     let uri_parts: actix_web::http::uri::Parts = req.uri().to_owned().into_parts();
@@ -58,7 +58,6 @@ async fn main() -> std::io::Result<()> {
 
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls())
         .expect("SSL Acceptor Builder creating failed");
-
 
     builder.set_private_key_file(&config.priv_key_file, SslFiletype::PEM)
         .expect("SSL private key file setting failed");
@@ -129,6 +128,9 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/auth")
                 .route(web::post().to(auth_submit))
                 .route(web::get().to(auth))
+            )
+            .service(web::resource("/deauth")
+                .route(web::get().to(deauth))
             )
             .service(web::resource("/sitemap.xml")
                 .route(web::get().to(sitemap))

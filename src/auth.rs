@@ -15,8 +15,13 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use actix_web::{ HttpRequest, HttpMessage, cookie::Cookie };
 use std::error::Error;
+use serde::Deserialize;
+use tera::Context;
+use actix_web::{ HttpRequest, HttpMessage, HttpResponse, cookie::Cookie, web, http::header };
+
+use crate::errors::*;
+use crate::state::State;
 
 pub struct Auth<'a> {
     token: String,
@@ -30,7 +35,7 @@ impl Auth<'_> {
         Ok(Auth { token, cookie: Cookie::named("auth") })
     }
 
-    pub fn has_admin_rights(&self, req: HttpRequest) -> bool {
+    pub fn authorized(&self, req: &HttpRequest) -> bool {
         match req.cookie("auth") {
             Some(cookie) => { cookie.value() == self.token }
             _ => { false }
@@ -44,6 +49,10 @@ impl Auth<'_> {
         }
 
         return false;
+    }
+
+    pub fn deauth(&self, response: &mut HttpResponse) {
+        response.add_cookie(&Cookie::named("auth"));
     }
 
     pub fn cookie(&self) -> &Cookie {
@@ -61,4 +70,53 @@ impl Auth<'_> {
 
         Ok(())
     }
+}
+
+#[derive(Deserialize)]
+pub struct AuthFormData {
+    token: String,
+}
+
+pub async fn auth_submit(req: HttpRequest,
+                         state: web::Data<State<'_>>,
+                         form: web::Form<AuthFormData>) -> HttpResponse {
+    let mut response = HttpResponse::SeeOther()
+        .header("Location", "/")
+        .finish();
+
+    let mut auth = state.auth.lock().unwrap();
+
+    if auth.auth(form.token.clone()) {
+        try_500!(response.add_cookie(auth.cookie()), state, req);
+    }
+
+    response
+}
+
+pub async fn auth(req: HttpRequest,
+                  state: web::Data<State<'_>>) -> HttpResponse {
+    let mut context = Context::new();
+
+    context.insert("authorized", &state.auth.lock().unwrap().authorized(&req));
+
+    return HttpResponse::Ok().body(try_500!(state.tera.render("auth.html", &context), state, req));
+}
+
+pub async fn deauth(req: HttpRequest,
+                    state: web::Data<State<'_>>) -> HttpResponse {
+    let mut url = "/";
+
+    if let Some(temp_url) = req.headers().get(header::REFERER) {
+        if let Ok(temp_url) = temp_url.to_str() {
+            url = temp_url;
+        }
+    }
+
+    let mut response = HttpResponse::SeeOther()
+        .header("Location", url)
+        .finish();
+
+    state.auth.lock().unwrap().deauth(&mut response);
+
+    response
 }

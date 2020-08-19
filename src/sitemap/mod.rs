@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use actix_web::{ web, HttpResponse };
+use actix_web::{ web, HttpResponse, HttpRequest };
 use rusqlite::{ NO_PARAMS };
 use tera::Context;
 
@@ -25,7 +25,8 @@ use crate::sitemap::url::Url;
 
 mod url;
 
-pub async fn sitemap(state: web::Data<State<'_>>) -> HttpResponse {
+pub async fn sitemap(req: HttpRequest,
+                     state: web::Data<State<'_>>) -> HttpResponse {
     let mut context = Context::new();
 
     let mut stmt = try_500!(state.conn.prepare("
@@ -34,16 +35,16 @@ pub async fn sitemap(state: web::Data<State<'_>>) -> HttpResponse {
             MAX(lastmod)
         FROM
             articles
-    "), state);
+    "), state, req);
 
-    let mut rows = try_500!(stmt.query(NO_PARAMS), state);
-    let row = try_500!(rows.next(), state);
+    let mut rows = try_500!(stmt.query(NO_PARAMS), state, req);
+    let row = try_500!(rows.next(), state, req);
     let mut urls: Vec<Url> = Vec::new();
 
     let newest = match row {
         Some(row) => {
-            let max_date = try_500!(row.get(0), state);
-            let max_lastmod = try_500!(row.get(1), state);
+            let max_date = try_500!(row.get(0), state, req);
+            let max_lastmod = try_500!(row.get(1), state, req);
 
             if max_date > max_lastmod { max_date } else { max_lastmod }
         }
@@ -60,15 +61,15 @@ pub async fn sitemap(state: web::Data<State<'_>>) -> HttpResponse {
             lastmod
         FROM
             articles
-    "), state);
+    "), state, req);
 
-    let mut rows = try_500!(stmt.query(NO_PARAMS), state);
+    let mut rows = try_500!(stmt.query(NO_PARAMS), state, req);
 
-    while let Some(row) = try_500!(rows.next(), state) {
-        urls.push(try_500!(Url::from_row(row, state.config.host.to_owned()), state));
+    while let Some(row) = try_500!(rows.next(), state, req) {
+        urls.push(try_500!(Url::from_row(row, state.config.host.to_owned()), state, req));
     }
 
     context.insert("urls", &urls);
 
-    return HttpResponse::Ok().body(try_500!(state.tera.render("sitemap.xml", &context), state));
+    return HttpResponse::Ok().body(try_500!(state.tera.render("sitemap.xml", &context), state, req));
 }

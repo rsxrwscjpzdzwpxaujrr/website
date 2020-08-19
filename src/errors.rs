@@ -15,33 +15,39 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use actix_web::{ web, HttpResponse };
+use actix_web::{ web, HttpResponse, HttpRequest };
 use tera::Context;
 use crate::state::State;
 
 #[macro_export]
 macro_rules! try_500 {
-    ($e:expr, $state:expr) => {{
+    ($e:expr, $state:expr, $req:expr) => {{
         match $e {
             Ok(e) => e,
-            Err(e) => { eprintln!("Error 500: {}", e); return error_500($state.clone()) },
+            Err(e) => { eprintln!("Error 500: {}", e); return error_500($req.clone(), $state.clone()) },
         }
     }};
 }
 
-pub async fn error_404(state: web::Data<State<'_>>) -> HttpResponse {
-    let context = Context::new();
+pub async fn error_404(req: HttpRequest,
+                       state: web::Data<State<'_>>) -> HttpResponse {
+    let mut context = Context::new();
+
+    context.insert("authorized", &state.auth.lock().unwrap().authorized(&req));
 
     return HttpResponse::NotFound()
-        .body(try_500!(state.tera.render("404.html", &context), state));
+        .body(try_500!(state.tera.render("404.html", &context), state, req));
 }
 
 fn error_emergency_500() -> HttpResponse {
     return HttpResponse::InternalServerError().body("500 Internal Server Error");
 }
 
-pub fn error_500(state: web::Data<State<'_>>) -> HttpResponse {
-    let context = Context::new();
+pub fn error_500(req: HttpRequest,
+                 state: web::Data<State<'_>>) -> HttpResponse {
+    let mut context = Context::new();
+
+    context.insert("authorized", &state.auth.lock().unwrap().authorized(&req));
 
     if let Ok(body) = state.tera.render("500.html", &context) {
         return HttpResponse::InternalServerError().body(body);

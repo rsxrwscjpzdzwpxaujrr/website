@@ -120,6 +120,23 @@ a:hover {
     color: #d64937;
 }
 
+.headerlinks {
+    text-align: right;
+    transform: translateY(-150%);
+    box-sizing: border-box;
+    margin-bottom: -12pt;
+    font-size: 12pt;
+    margin-right: 24px;
+}
+
+.headerlinks a, .auth a:visited {
+    color: #c8c8c8;
+}
+
+.headerlinks a:hover {
+    color: #d64937;
+}
+
 .button, .button:visited {
     color: #dcdcdc;
     background: #3d3d3d;
