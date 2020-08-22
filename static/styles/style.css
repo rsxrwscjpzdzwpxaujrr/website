@@ -170,6 +170,7 @@ a:hover {
     margin: 50px;
     padding: 32px;
     background: #f9f9f9;
+    overflow: auto;
 }
 
 .post .date {
@@ -217,6 +218,11 @@ input[type=submit] {
 
 .shadowed {
     box-shadow: 0 8px 18px 0 rgba(0, 0, 0, 0.3);
+}
+
+code {
+    color: #333333;
+    font-size: 11pt;
 }
 
 @media (max-width: 800px) {
