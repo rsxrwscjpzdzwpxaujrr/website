@@ -32,8 +32,9 @@ macro_rules! try_500 {
 pub async fn error_404(req: HttpRequest,
                        state: web::Data<State<'_>>) -> HttpResponse {
     let mut context = Context::new();
+    let auth = try_500!(state.auth.lock(), state, req);
 
-    context.insert("authorized", &state.auth.lock().unwrap().authorized(&req));
+    context.insert("authorized", &auth.authorized(&req));
 
     return HttpResponse::NotFound()
         .body(try_500!(state.tera.render("404.html", &context), state, req));
@@ -46,8 +47,9 @@ fn error_emergency_500() -> HttpResponse {
 pub fn error_500(req: HttpRequest,
                  state: web::Data<State<'_>>) -> HttpResponse {
     let mut context = Context::new();
+    let auth = try_500!(state.auth.lock(), state, req);
 
-    context.insert("authorized", &state.auth.lock().unwrap().authorized(&req));
+    context.insert("authorized", &auth.authorized(&req));
 
     if let Ok(body) = state.tera.render("500.html", &context) {
         return HttpResponse::InternalServerError().body(body);

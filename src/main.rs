@@ -25,7 +25,7 @@ mod sitemap;
 mod auth;
 
 use std::sync::Mutex;
-use actix_web::{ web, App, middleware, HttpServer, Responder, HttpResponse, HttpRequest };
+use actix_web::{ web, App, middleware, HttpServer, HttpResponse, HttpRequest };
 use actix_files::Files;
 use openssl::ssl::{ SslAcceptor, SslFiletype, SslMethod };
 
@@ -36,14 +36,22 @@ use pages::*;
 use sitemap::sitemap;
 use crate::auth::*;
 
-async fn redirect(req: HttpRequest, host: web::Data<String>) -> impl Responder {
+async fn redirect(req: HttpRequest,
+                  state: web::Data<State<'_>>,
+                  host: web::Data<String>) -> HttpResponse {
     let uri_parts: actix_web::http::uri::Parts = req.uri().to_owned().into_parts();
+    let path_and_query = try_500!(
+        uri_parts.path_and_query.ok_or("Can not get path_and_query"),
+        state, req
+    );
 
-    return HttpResponse::PermanentRedirect().header("Location",
+    return HttpResponse::PermanentRedirect().header(
+        "Location",
         format!("https://{}{}",
             host.get_ref(),
-            uri_parts.path_and_query.unwrap().as_str())
-        ).finish();
+            path_and_query.as_str()
+        )
+    ).finish();
 }
 
 #[actix_rt::main]

@@ -84,7 +84,7 @@ pub async fn auth_submit(req: HttpRequest,
         .header("Location", "/")
         .finish();
 
-    let mut auth = state.auth.lock().unwrap();
+    let mut auth = try_500!(state.auth.lock(), state, req);
 
     if auth.auth(form.token.clone()) {
         try_500!(response.add_cookie(auth.cookie()), state, req);
@@ -96,8 +96,9 @@ pub async fn auth_submit(req: HttpRequest,
 pub async fn auth(req: HttpRequest,
                   state: web::Data<State<'_>>) -> HttpResponse {
     let mut context = Context::new();
+    let auth = try_500!(state.auth.lock(), state, req);
 
-    context.insert("authorized", &state.auth.lock().unwrap().authorized(&req));
+    context.insert("authorized", &auth.authorized(&req));
 
     return HttpResponse::Ok().body(try_500!(state.tera.render("auth.html", &context), state, req));
 }
@@ -116,7 +117,9 @@ pub async fn deauth(req: HttpRequest,
         .header("Location", url)
         .finish();
 
-    state.auth.lock().unwrap().deauth(&mut response);
+    let auth = try_500!(state.auth.lock(), state, req);
+
+    auth.deauth(&mut response);
 
     response
 }

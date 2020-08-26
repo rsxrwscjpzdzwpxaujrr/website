@@ -33,8 +33,9 @@ pub async fn article_index(req: HttpRequest,
                            state: web::Data<State<'_>>,
                            link: web::Path<String>) -> HttpResponse {
     let mut context = Context::new();
+    let auth = &try_500!(state.auth.lock(), state, req);
 
-    context.insert("authorized", &state.auth.lock().unwrap().authorized(&req));
+    context.insert("authorized", &auth.authorized(&req));
 
     let mut stmt = try_500!(state.conn.prepare("
         SELECT *
@@ -67,8 +68,9 @@ pub async fn hidden_article_index(req: HttpRequest,
                                   state: web::Data<State<'_>>,
                                   link: web::Path<String>) -> HttpResponse {
     let mut context = Context::new();
+    let auth = try_500!(state.auth.lock(), state, req);
 
-    context.insert("authorized", &state.auth.lock().unwrap().authorized(&req));
+    context.insert("authorized", &auth.authorized(&req));
 
     let mut stmt = try_500!(state.conn.prepare("
         SELECT *
@@ -100,8 +102,9 @@ pub async fn articles_redirect() -> impl Responder {
 pub async fn articles(req: HttpRequest,
                       state: web::Data<State<'_>>) -> impl Responder {
     let mut context = Context::new();
+    let auth = try_500!(state.auth.lock(), state, req);
 
-    context.insert("authorized", &state.auth.lock().unwrap().authorized(&req));
+    context.insert("authorized", &auth.authorized(&req));
 
     let mut stmt = try_500!(state.conn.prepare("
         SELECT *
