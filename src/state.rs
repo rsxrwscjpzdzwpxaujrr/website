@@ -15,7 +15,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-use std::sync::{ Arc, Mutex };
+use std::sync::{ Arc, RwLock };
 
 use crate::config::Config;
 use crate::auth::Auth;
@@ -24,5 +24,5 @@ pub struct State<'a> {
     pub tera: tera::Tera,
     pub conn: rusqlite::Connection,
     pub config: Arc<Config>,
-    pub auth: Mutex<Auth<'a>>,
+    pub auth: RwLock<Auth<'a>>,
 }

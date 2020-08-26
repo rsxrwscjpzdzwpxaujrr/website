@@ -84,7 +84,7 @@ pub async fn auth_submit(req: HttpRequest,
         .header("Location", "/")
         .finish();
 
-    let mut auth = try_500!(state.auth.lock(), state, req);
+    let mut auth = try_500!(state.auth.write(), state, req);
 
     if auth.auth(form.token.clone()) {
         try_500!(response.add_cookie(auth.cookie()), state, req);
@@ -96,7 +96,7 @@ pub async fn auth_submit(req: HttpRequest,
 pub async fn auth(req: HttpRequest,
                   state: web::Data<State<'_>>) -> HttpResponse {
     let mut context = Context::new();
-    let auth = try_500!(state.auth.lock(), state, req);
+    let auth = try_500!(state.auth.read(), state, req);
 
     context.insert("authorized", &auth.authorized(&req));
 
@@ -117,7 +117,7 @@ pub async fn deauth(req: HttpRequest,
         .header("Location", url)
         .finish();
 
-    let auth = try_500!(state.auth.lock(), state, req);
+    let auth = try_500!(state.auth.read(), state, req);
 
     auth.deauth(&mut response);
 

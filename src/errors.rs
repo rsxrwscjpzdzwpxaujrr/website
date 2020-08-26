@@ -42,7 +42,7 @@ macro_rules! try_emergency_500 {
 pub async fn error_404(req: HttpRequest,
                        state: web::Data<State<'_>>) -> HttpResponse {
     let mut context = Context::new();
-    let auth = try_500!(state.auth.lock(), state, req);
+    let auth = try_500!(state.auth.read(), state, req);
 
     context.insert("authorized", &auth.authorized(&req));
 
@@ -57,7 +57,7 @@ pub fn error_emergency_500() -> HttpResponse {
 pub fn error_500(req: HttpRequest,
                  state: web::Data<State<'_>>) -> HttpResponse {
     let mut context = Context::new();
-    let auth = try_500!(state.auth.lock(), state, req);
+    let auth = try_500!(state.auth.read(), state, req);
 
     context.insert("authorized", &auth.authorized(&req));
 

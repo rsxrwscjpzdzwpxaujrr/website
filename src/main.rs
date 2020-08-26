@@ -24,7 +24,7 @@ mod pages;
 mod sitemap;
 mod auth;
 
-use std::sync::Mutex;
+use std::sync::RwLock;
 use actix_web::{ web, App, middleware, HttpServer, HttpResponse, HttpRequest };
 use actix_files::Files;
 use openssl::ssl::{ SslAcceptor, SslFiletype, SslMethod };
@@ -94,7 +94,7 @@ async fn main() -> std::io::Result<()> {
 
             config: config_temp.clone(),
 
-            auth: Mutex::new(Auth::new(config_temp.token.clone())
+            auth: RwLock::new(Auth::new(config_temp.token.clone())
                 .expect("Auth creation failed"))
         };
 
