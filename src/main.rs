@@ -37,12 +37,10 @@ use sitemap::sitemap;
 use crate::auth::*;
 
 async fn redirect(req: HttpRequest,
-                  state: web::Data<State<'_>>,
                   host: web::Data<String>) -> HttpResponse {
     let uri_parts: actix_web::http::uri::Parts = req.uri().to_owned().into_parts();
-    let path_and_query = try_500!(
-        uri_parts.path_and_query.ok_or("Can not get path_and_query"),
-        state, req
+    let path_and_query = try_emergency_500!(
+        uri_parts.path_and_query.ok_or("Can not get path_and_query")
     );
 
     return HttpResponse::PermanentRedirect().header(

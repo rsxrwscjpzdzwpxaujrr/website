@@ -29,6 +29,16 @@ macro_rules! try_500 {
     }};
 }
 
+#[macro_export]
+macro_rules! try_emergency_500 {
+    ($e:expr) => {{
+        match $e {
+            Ok(e) => e,
+            Err(e) => { eprintln!("Error 500: {}", e); return error_emergency_500() },
+        }
+    }};
+}
+
 pub async fn error_404(req: HttpRequest,
                        state: web::Data<State<'_>>) -> HttpResponse {
     let mut context = Context::new();
@@ -40,7 +50,7 @@ pub async fn error_404(req: HttpRequest,
         .body(try_500!(state.tera.render("404.html", &context), state, req));
 }
 
-fn error_emergency_500() -> HttpResponse {
+pub fn error_emergency_500() -> HttpResponse {
     return HttpResponse::InternalServerError().body("500 Internal Server Error");
 }
 
