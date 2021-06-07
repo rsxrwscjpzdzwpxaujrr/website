@@ -15,6 +15,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::fmt;
+use std::error::Error;
 use actix_web::{ web, HttpResponse, HttpRequest };
 use tera::Context;
 use crate::state::State;
@@ -22,9 +24,12 @@ use crate::state::State;
 #[macro_export]
 macro_rules! try_500 {
     ($e:expr, $state:expr, $req:expr) => {{
+        let temp_state = $state.clone();
+        let temp_req = $req.clone();
+
         match $e {
             Ok(e) => e,
-            Err(e) => { eprintln!("Error 500: {}", e); return error_500($req.clone(), $state.clone()) },
+            Err(e) => { eprintln!("Error 500: {}", e); return error_500(temp_req, temp_state) },
         }
     }};
 }
@@ -39,8 +44,31 @@ macro_rules! try_emergency_500 {
     }};
 }
 
+#[derive(Debug)]
+pub struct MyError {
+    details: String,
+}
+
+impl fmt::Display for MyError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.details)
+    }
+}
+
+impl Error for MyError {
+    fn description(&self) -> &str {
+        &self.details
+    }
+}
+
+impl<T> From<std::sync::PoisonError<T>> for MyError {
+    fn from(err: std::sync::PoisonError<T>) -> Self {
+        MyError { details: err.to_string() }
+    }
+}
+
 pub async fn error_404(req: HttpRequest,
-                       state: web::Data<State<'_>>) -> HttpResponse {
+                       state: web::Data<State>) -> HttpResponse {
     let mut context = Context::new();
     let auth = try_500!(state.auth.read(), state, req);
 
@@ -55,7 +83,7 @@ pub fn error_emergency_500() -> HttpResponse {
 }
 
 pub fn error_500(req: HttpRequest,
-                 state: web::Data<State<'_>>) -> HttpResponse {
+                 state: web::Data<State>) -> HttpResponse {
     let mut context = Context::new();
     let auth = try_500!(state.auth.read(), state, req);
 

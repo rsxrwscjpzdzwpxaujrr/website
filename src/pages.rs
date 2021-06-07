@@ -15,9 +15,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+use std::error::Error;
+
 use actix_web::{ web, Responder, HttpResponse, HttpRequest };
 use tera::Context;
-use rusqlite::{ params, NO_PARAMS };
+use rusqlite::params;
 
 use crate::errors::*;
 use crate::state::State;
@@ -30,83 +32,116 @@ pub async fn article_redirect(link: web::Path<String>) -> impl Responder {
 }
 
 pub async fn article_index(req: HttpRequest,
-                           state: web::Data<State<'_>>,
+                           state: web::Data<State>,
                            link: web::Path<String>) -> HttpResponse {
+    try_500!(article_index_inner(req, state, link).await, state, req)
+}
+
+pub async fn hidden_article_redirect(link: web::Path<String>) -> impl Responder {
+    HttpResponse::PermanentRedirect()
+        .header("Location", format!("/articles/hidden/{}", link))
+        .finish()
+}
+
+pub async fn hidden_article_index(req: HttpRequest,
+                                  state: web::Data<State>,
+                                  link: web::Path<String>) -> HttpResponse {
+    try_500!(hidden_article_index_inner(req, state, link).await, state, req)
+}
+
+pub async fn articles_redirect() -> impl Responder {
+    HttpResponse::PermanentRedirect()
+        .header("Location", "/articles")
+        .finish()
+}
+
+pub async fn articles(req: HttpRequest,
+                      state: web::Data<State>) -> HttpResponse {
+    try_500!(articles_inner(req, state).await, state, req)
+}
+
+pub async fn post_index(link: web::Path<String>) -> HttpResponse {
+    HttpResponse::PermanentRedirect()
+        .header("Location", format!("/articles/{}", link))
+        .finish()
+}
+
+pub async fn posts() -> impl Responder {
+    HttpResponse::PermanentRedirect()
+        .header("Location", "/articles")
+        .finish()
+}
+
+pub async fn index(req: HttpRequest, state: web::Data<State>) -> impl Responder {
+    articles(req, state).await
+}
+
+async fn article_index_inner(req: HttpRequest,
+                             state: web::Data<State>,
+                             link: web::Path<String>) -> Result<HttpResponse, Box<dyn Error>> {
     let mut context = Context::new();
-    let auth = try_500!(state.auth.read(), state, req);
+    let auth = state.auth.read().map_err(MyError::from)?;
 
     context.insert("authorized", &auth.authorized(&req));
 
-    let mut stmt = try_500!(state.conn.prepare("
+    let mut stmt = state.conn.prepare("
         SELECT *
         FROM
             articles
         WHERE
             link=?
-    "), state, req);
+    ")?;
 
-    let mut rows = try_500!(stmt.query(params![link.to_string()]), state, req);
+    let mut rows = stmt.query(params![link.to_string()])?;
 
-    let post = if let Some(row) = try_500!(rows.next(), state, req) {
-        try_500!(Post::from_row(row), state, req)
+    let post = if let Some(row) = rows.next()? {
+        Post::from_row(row)?
     } else {
-        return error_404(req.clone(), state.clone()).await;
+        return Ok(error_404(req.clone(), state.clone()).await);
     };
 
     context.insert("post", &post);
 
-    return HttpResponse::Ok().body(try_500!(state.tera.render("post.html", &context), state, req));
+    Ok(HttpResponse::Ok().body(state.tera.render("post.html", &context)?))
 }
 
-pub async fn hidden_article_redirect(link: web::Path<String>) -> impl Responder {
-    return HttpResponse::PermanentRedirect()
-        .header("Location", format!("/articles/hidden/{}", link))
-        .finish();
-}
-
-pub async fn hidden_article_index(req: HttpRequest,
-                                  state: web::Data<State<'_>>,
-                                  link: web::Path<String>) -> HttpResponse {
+async fn hidden_article_index_inner(req: HttpRequest,
+                                    state: web::Data<State>,
+                                    link: web::Path<String>) -> Result<HttpResponse, Box<dyn Error>> {
     let mut context = Context::new();
-    let auth = try_500!(state.auth.read(), state, req);
+    let auth = state.auth.read().map_err(MyError::from)?;
 
     context.insert("authorized", &auth.authorized(&req));
 
-    let mut stmt = try_500!(state.conn.prepare("
+    let mut stmt = state.conn.prepare("
         SELECT *
         FROM
             hidden_articles
         WHERE
             link=?
-    "), state, req);
+    ")?;
 
-    let mut rows = try_500!(stmt.query(params![link.to_string()]), state, req);
+    let mut rows = stmt.query(params![link.to_string()])?;
 
-    let post = if let Some(row) = try_500!(rows.next(), state, req) {
-        try_500!(Post::from_row(row), state, req)
+    let post = if let Some(row) = rows.next()? {
+        Post::from_row(row)?
     } else {
-        return error_404(req.clone(), state.clone()).await;
+        return Ok(error_404(req.clone(), state.clone()).await);
     };
 
     context.insert("post", &post);
 
-    return HttpResponse::Ok().body(try_500!(state.tera.render("post.html", &context), state, req));
+    Ok(HttpResponse::Ok().body(state.tera.render("post.html", &context)?))
 }
 
-pub async fn articles_redirect() -> impl Responder {
-    return HttpResponse::PermanentRedirect()
-        .header("Location", "/articles")
-        .finish();
-}
-
-pub async fn articles(req: HttpRequest,
-                      state: web::Data<State<'_>>) -> impl Responder {
+async fn articles_inner(req: HttpRequest,
+                        state: web::Data<State>) -> Result<HttpResponse, Box<dyn Error>> {
     let mut context = Context::new();
-    let auth = try_500!(state.auth.read(), state, req);
+    let auth = state.auth.read().map_err(MyError::from)?;
 
     context.insert("authorized", &auth.authorized(&req));
 
-    let mut stmt = try_500!(state.conn.prepare("
+    let mut stmt = state.conn.prepare("
         SELECT *
         FROM
             articles
@@ -114,33 +149,16 @@ pub async fn articles(req: HttpRequest,
             dnshow=0
         ORDER BY
             date DESC
-    "), state, req);
+    ")?;
 
-    let mut rows = try_500!(stmt.query(NO_PARAMS), state, req);
+    let mut rows = stmt.query([])?;
     let mut posts: Vec<Post> = Vec::new();
 
-    while let Some(row) = try_500!(rows.next(), state, req) {
-        posts.push(try_500!(Post::from_row(row), state, req));
+    while let Some(row) = rows.next()? {
+        posts.push(Post::from_row(row)?);
     }
 
     context.insert("posts", &posts);
 
-    return HttpResponse::Ok().body(try_500!(state.tera.render("posts.html", &context), state, req));
+    Ok(HttpResponse::Ok().body(state.tera.render("posts.html", &context)?))
 }
-
-pub async fn post_index(link: web::Path<String>) -> HttpResponse {
-    return HttpResponse::PermanentRedirect()
-        .header("Location", format!("/articles/{}", link))
-        .finish();
-}
-
-pub async fn posts() -> impl Responder {
-    return HttpResponse::PermanentRedirect()
-        .header("Location", "/articles")
-        .finish();
-}
-
-pub async fn index(req: HttpRequest, state: web::Data<State<'_>>) -> impl Responder {
-    return articles(req, state).await;
-}
-

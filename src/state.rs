@@ -20,9 +20,9 @@ use std::sync::{ Arc, RwLock };
 use crate::config::Config;
 use crate::auth::Auth;
 
-pub struct State<'a> {
+pub struct State {
     pub tera: tera::Tera,
     pub conn: rusqlite::Connection,
     pub config: Arc<Config>,
-    pub auth: RwLock<Auth<'a>>,
+    pub auth: RwLock<Auth>,
 }

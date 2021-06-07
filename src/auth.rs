@@ -23,13 +23,13 @@ use actix_web::{ HttpRequest, HttpMessage, HttpResponse, cookie::Cookie, web, ht
 use crate::errors::*;
 use crate::state::State;
 
-pub struct Auth<'a> {
+pub struct Auth {
     token: String,
-    cookie: Cookie<'a>,
+    cookie: Cookie<'static>,
 }
 
-impl Auth<'_> {
-    pub fn new(token: String) -> Result<Auth<'static>, Box<dyn Error>> {
+impl Auth {
+    pub fn new(token: String) -> Result<Auth, Box<dyn Error>> {
         Auth::check_token(token.as_str())?;
 
         Ok(Auth { token, cookie: Cookie::named("auth") })
@@ -51,8 +51,8 @@ impl Auth<'_> {
         return false;
     }
 
-    pub fn deauth(&self, response: &mut HttpResponse) {
-        response.add_cookie(&Cookie::named("auth"));
+    pub fn deauth(&self, response: &mut HttpResponse) -> Result<(), actix_web::http::Error> {
+        response.add_cookie(&Cookie::named("auth"))
     }
 
     pub fn cookie(&self) -> &Cookie {
@@ -78,7 +78,7 @@ pub struct AuthFormData {
 }
 
 pub async fn auth_submit(req: HttpRequest,
-                         state: web::Data<State<'_>>,
+                         state: web::Data<State>,
                          form: web::Form<AuthFormData>) -> HttpResponse {
     let mut response = HttpResponse::SeeOther()
         .header("Location", "/")
@@ -94,17 +94,27 @@ pub async fn auth_submit(req: HttpRequest,
 }
 
 pub async fn auth(req: HttpRequest,
-                  state: web::Data<State<'_>>) -> HttpResponse {
-    let mut context = Context::new();
-    let auth = try_500!(state.auth.read(), state, req);
-
-    context.insert("authorized", &auth.authorized(&req));
-
-    return HttpResponse::Ok().body(try_500!(state.tera.render("auth.html", &context), state, req));
+                  state: web::Data<State>) -> HttpResponse {
+    try_500!(auth_inner(req, state).await, state, req)
 }
 
 pub async fn deauth(req: HttpRequest,
-                    state: web::Data<State<'_>>) -> HttpResponse {
+                    state: web::Data<State>) -> HttpResponse {
+    try_500!(deauth_inner(req, state).await, state, req)
+}
+
+async fn auth_inner(req: HttpRequest,
+                    state: web::Data<State>) -> Result<HttpResponse, Box<dyn Error>> {
+    let mut context = Context::new();
+    let auth = state.auth.read().map_err(MyError::from)?;
+
+    context.insert("authorized", &auth.authorized(&req));
+
+    Ok(HttpResponse::Ok().body(state.tera.render("auth.html", &context)?))
+}
+
+async fn deauth_inner(req: HttpRequest,
+                      state: web::Data<State>) -> Result<HttpResponse, Box<dyn Error>> {
     let mut url = "/";
 
     if let Some(temp_url) = req.headers().get(header::REFERER) {
@@ -117,9 +127,9 @@ pub async fn deauth(req: HttpRequest,
         .header("Location", url)
         .finish();
 
-    let auth = try_500!(state.auth.read(), state, req);
+    let auth = state.auth.read().map_err(MyError::from)?;
 
-    auth.deauth(&mut response);
+    auth.deauth(&mut response)?;
 
-    response
+    Ok(response)
 }

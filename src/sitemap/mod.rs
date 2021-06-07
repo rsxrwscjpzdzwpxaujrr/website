@@ -16,35 +16,40 @@
  */
 
 use actix_web::{ web, HttpResponse, HttpRequest };
-use rusqlite::{ NO_PARAMS };
 use tera::Context;
 
 use crate::errors::*;
 use crate::state::State;
 use crate::sitemap::url::Url;
+use std::error::Error;
 
 mod url;
 
 pub async fn sitemap(req: HttpRequest,
-                     state: web::Data<State<'_>>) -> HttpResponse {
+                     state: web::Data<State>) -> HttpResponse {
+    try_500!(sitemap_inner(req, state).await, state, req)
+}
+
+async fn sitemap_inner(_: HttpRequest,
+                       state: web::Data<State>) -> Result<HttpResponse, Box<dyn Error>> {
     let mut context = Context::new();
 
-    let mut stmt = try_500!(state.conn.prepare("
+    let mut stmt = state.conn.prepare("
         SELECT
             MAX(date),
             MAX(lastmod)
         FROM
             articles
-    "), state, req);
+    ")?;
 
-    let mut rows = try_500!(stmt.query(NO_PARAMS), state, req);
-    let row = try_500!(rows.next(), state, req);
+    let mut rows = stmt.query([])?;
+    let row = rows.next()?;
     let mut urls: Vec<Url> = Vec::new();
 
     let newest = match row {
         Some(row) => {
-            let max_date = try_500!(row.get(0), state, req);
-            let max_lastmod = try_500!(row.get(1), state, req);
+            let max_date = row.get(0)?;
+            let max_lastmod = row.get(1)?;
 
             if max_date > max_lastmod { max_date } else { max_lastmod }
         }
@@ -54,22 +59,22 @@ pub async fn sitemap(req: HttpRequest,
 
     urls.push(Url::from_link("/".to_owned(), state.config.host.to_owned(), newest));
 
-    let mut stmt = try_500!(state.conn.prepare("
+    let mut stmt = state.conn.prepare("
         SELECT
             link,
             date,
             lastmod
         FROM
             articles
-    "), state, req);
+    ")?;
 
-    let mut rows = try_500!(stmt.query(NO_PARAMS), state, req);
+    let mut rows = stmt.query([])?;
 
-    while let Some(row) = try_500!(rows.next(), state, req) {
-        urls.push(try_500!(Url::from_row(row, state.config.host.to_owned()), state, req));
+    while let Some(row) = rows.next()? {
+        urls.push(Url::from_row(row, state.config.host.to_owned())?);
     }
 
     context.insert("urls", &urls);
 
-    return HttpResponse::Ok().body(try_500!(state.tera.render("sitemap.xml", &context), state, req));
+    Ok(HttpResponse::Ok().body(state.tera.render("sitemap.xml", &context)?))
 }
