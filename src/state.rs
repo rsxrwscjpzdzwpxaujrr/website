@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
+ * Copyright (c) 2020, 2022 Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License
@@ -16,13 +16,15 @@
  */
 
 use std::sync::{ Arc, RwLock };
+use geoip2::{ Country, Reader };
 
 use crate::config::Config;
 use crate::auth::Auth;
 
-pub struct State {
+pub struct State<'a> {
     pub tera: tera::Tera,
     pub conn: rusqlite::Connection,
     pub config: Arc<Config>,
     pub auth: RwLock<Auth>,
+    pub geoip_reader: Option<Reader<'a, Country<'a>>>,
 }

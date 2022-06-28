@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
+ * Copyright (c) 2020, 2022 Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License
@@ -32,7 +32,7 @@ pub async fn article_redirect(link: web::Path<String>) -> impl Responder {
 }
 
 pub async fn article_index(req: HttpRequest,
-                           state: web::Data<State>,
+                           state: web::Data<State<'_>>,
                            link: web::Path<String>) -> HttpResponse {
     try_500!(article_index_inner(req, state, link).await, state, req)
 }
@@ -44,7 +44,7 @@ pub async fn hidden_article_redirect(link: web::Path<String>) -> impl Responder 
 }
 
 pub async fn hidden_article_index(req: HttpRequest,
-                                  state: web::Data<State>,
+                                  state: web::Data<State<'_>>,
                                   link: web::Path<String>) -> HttpResponse {
     try_500!(hidden_article_index_inner(req, state, link).await, state, req)
 }
@@ -56,7 +56,7 @@ pub async fn articles_redirect() -> impl Responder {
 }
 
 pub async fn articles(req: HttpRequest,
-                      state: web::Data<State>) -> HttpResponse {
+                      state: web::Data<State<'_>>) -> HttpResponse {
     try_500!(articles_inner(req, state).await, state, req)
 }
 
@@ -72,14 +72,17 @@ pub async fn posts() -> impl Responder {
         .finish()
 }
 
-pub async fn index(req: HttpRequest, state: web::Data<State>) -> impl Responder {
+pub async fn index(req: HttpRequest, state: web::Data<State<'_>>) -> impl Responder {
     articles(req, state).await
 }
 
 async fn article_index_inner(req: HttpRequest,
-                             state: web::Data<State>,
+                             state: web::Data<State<'_>>,
                              link: web::Path<String>) -> Result<HttpResponse, Box<dyn Error>> {
     let mut context = Context::new();
+
+    fail_russia(&req, state.clone())?;
+
     let auth = state.auth.read().map_err(MyError::from)?;
 
     context.insert("authorized", &auth.authorized(&req));
@@ -106,9 +109,12 @@ async fn article_index_inner(req: HttpRequest,
 }
 
 async fn hidden_article_index_inner(req: HttpRequest,
-                                    state: web::Data<State>,
+                                    state: web::Data<State<'_>>,
                                     link: web::Path<String>) -> Result<HttpResponse, Box<dyn Error>> {
     let mut context = Context::new();
+
+    fail_russia(&req, state.clone())?;
+
     let auth = state.auth.read().map_err(MyError::from)?;
 
     context.insert("authorized", &auth.authorized(&req));
@@ -135,8 +141,11 @@ async fn hidden_article_index_inner(req: HttpRequest,
 }
 
 async fn articles_inner(req: HttpRequest,
-                        state: web::Data<State>) -> Result<HttpResponse, Box<dyn Error>> {
+                        state: web::Data<State<'_>>) -> Result<HttpResponse, Box<dyn Error>> {
     let mut context = Context::new();
+
+    fail_russia(&req, state.clone())?;
+
     let auth = state.auth.read().map_err(MyError::from)?;
 
     context.insert("authorized", &auth.authorized(&req));
@@ -161,4 +170,35 @@ async fn articles_inner(req: HttpRequest,
     context.insert("posts", &posts);
 
     Ok(HttpResponse::Ok().body(state.tera.render("posts.html", &context)?))
+}
+
+fn fail_russia(req: &HttpRequest,
+               state: web::Data<State<'_>>) -> Result<(), MyError> {
+    let country_code = get_peer_country(req, state);
+
+    if let Some(country_code) = country_code {
+        if country_code == "RU" {
+            return Err(MyError::new_russia());
+        }
+    }
+
+    Ok(())
+}
+
+fn get_peer_country(req: &HttpRequest,
+                          state: web::Data<State<'_>>) -> Option<String> {
+    let ip = req.peer_addr().unwrap().ip();
+    //let ip = "80.92.32.0".parse::<std::net::IpAddr>().unwrap();
+
+    if let Some(geoip_reader) = &state.geoip_reader {
+        if let Ok(result) = geoip_reader.lookup(ip) {
+            let country_code = result.country.unwrap().iso_code.unwrap();
+
+            Some(country_code.to_owned())
+        } else {
+            None
+        }
+    } else {
+        None
+    }
 }

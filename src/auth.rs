@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
+ * Copyright (c) 2020, 2022 Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License
@@ -78,7 +78,7 @@ pub struct AuthFormData {
 }
 
 pub async fn auth_submit(req: HttpRequest,
-                         state: web::Data<State>,
+                         state: web::Data<State<'_>>,
                          form: web::Form<AuthFormData>) -> HttpResponse {
     let mut response = HttpResponse::SeeOther()
         .header("Location", "/")
@@ -94,17 +94,17 @@ pub async fn auth_submit(req: HttpRequest,
 }
 
 pub async fn auth(req: HttpRequest,
-                  state: web::Data<State>) -> HttpResponse {
+                  state: web::Data<State<'_>>) -> HttpResponse {
     try_500!(auth_inner(req, state).await, state, req)
 }
 
 pub async fn deauth(req: HttpRequest,
-                    state: web::Data<State>) -> HttpResponse {
+                    state: web::Data<State<'_>>) -> HttpResponse {
     try_500!(deauth_inner(req, state).await, state, req)
 }
 
 async fn auth_inner(req: HttpRequest,
-                    state: web::Data<State>) -> Result<HttpResponse, Box<dyn Error>> {
+                    state: web::Data<State<'_>>) -> Result<HttpResponse, Box<dyn Error>> {
     let mut context = Context::new();
     let auth = state.auth.read().map_err(MyError::from)?;
 
@@ -114,7 +114,7 @@ async fn auth_inner(req: HttpRequest,
 }
 
 async fn deauth_inner(req: HttpRequest,
-                      state: web::Data<State>) -> Result<HttpResponse, Box<dyn Error>> {
+                      state: web::Data<State<'_>>) -> Result<HttpResponse, Box<dyn Error>> {
     let mut url = "/";
 
     if let Some(temp_url) = req.headers().get(header::REFERER) {

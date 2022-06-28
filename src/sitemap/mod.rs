@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
+ * Copyright (c) 2020, 2022 Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License
@@ -26,12 +26,12 @@ use std::error::Error;
 mod url;
 
 pub async fn sitemap(req: HttpRequest,
-                     state: web::Data<State>) -> HttpResponse {
+                     state: web::Data<State<'_>>) -> HttpResponse {
     try_500!(sitemap_inner(req, state).await, state, req)
 }
 
 async fn sitemap_inner(_: HttpRequest,
-                       state: web::Data<State>) -> Result<HttpResponse, Box<dyn Error>> {
+                       state: web::Data<State<'_>>) -> Result<HttpResponse, Box<dyn Error>> {
     let mut context = Context::new();
 
     let mut stmt = state.conn.prepare("

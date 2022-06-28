@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019-2020, Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
+ * Copyright (c) 2019-2020, 2022 Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License
@@ -24,9 +24,12 @@ mod pages;
 mod sitemap;
 mod auth;
 
+use std::fs;
+use std::path::Path;
 use std::sync::RwLock;
 use actix_web::{ web, App, middleware, HttpServer, HttpResponse, HttpRequest };
 use actix_files::Files;
+use geoip2::{ Country, Reader };
 use openssl::ssl::{ SslAcceptor, SslFiletype, SslMethod };
 
 use errors::*;
@@ -50,6 +53,10 @@ async fn redirect(req: HttpRequest,
             path_and_query.as_str()
         )
     ).finish();
+}
+
+fn init_reader<'a, P: AsRef<Path>>(path: P) -> Result<Reader<'a, Country<'a>>, MyError> {
+    Ok(Reader::<Country>::from_bytes(Box::leak(fs::read(path)?.into_boxed_slice()))?)
 }
 
 #[actix_rt::main]
@@ -95,7 +102,15 @@ async fn main() -> std::io::Result<()> {
             config: config_temp.clone(),
 
             auth: RwLock::new(Auth::new(config_temp.token.clone())
-                .expect("Auth creation failed"))
+                .expect("Auth creation failed")),
+
+            geoip_reader: match init_reader(&config_temp.geoip_db_file) {
+                Ok(result) => Some(result),
+                Err(e) => {
+                    eprintln!("geoip2 init error: {}", e.to_string());
+                    None
+                },
+            }
         };
 
         App::new()

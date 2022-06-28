@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
+ * Copyright (c) 2020, 2022 Мира Странная <rsxrwscjpzdzwpxaujrr@yahoo.com>
  *
  * This program is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Affero General Public License
@@ -17,6 +17,7 @@
 
 use std::fmt;
 use std::error::Error;
+use std::sync::PoisonError;
 use actix_web::{ web, HttpResponse, HttpRequest };
 use tera::Context;
 use crate::state::State;
@@ -29,7 +30,15 @@ macro_rules! try_500 {
 
         match $e {
             Ok(e) => e,
-            Err(e) => { eprintln!("Error 500: {}", e); return error_500(temp_req, temp_state) },
+            Err(e) => {
+                if (e.to_string() == "terrorrussia") {
+                    eprintln!("Error 401 Russia");
+                    return error_401_russia(temp_req, temp_state)
+                }
+
+                eprintln!("Error 500: {}", e);
+                return error_500(temp_req, temp_state)
+            },
         }
     }};
 }
@@ -61,14 +70,32 @@ impl Error for MyError {
     }
 }
 
-impl<T> From<std::sync::PoisonError<T>> for MyError {
-    fn from(err: std::sync::PoisonError<T>) -> Self {
+impl<T> From<PoisonError<T>> for MyError {
+    fn from(err: PoisonError<T>) -> Self {
         MyError { details: err.to_string() }
     }
 }
 
+impl From<std::io::Error> for MyError {
+    fn from(err: std::io::Error) -> Self {
+        MyError { details: err.to_string() }
+    }
+}
+
+impl From<geoip2::Error> for MyError {
+    fn from(_: geoip2::Error) -> Self {
+        MyError { details: "geoip2 error".to_owned() }
+    }
+}
+
+impl MyError {
+    pub fn new_russia() -> Self {
+        MyError { details: "terrorrussia".to_owned() }
+    }
+}
+
 pub async fn error_404(req: HttpRequest,
-                       state: web::Data<State>) -> HttpResponse {
+                       state: web::Data<State<'_>>) -> HttpResponse {
     let mut context = Context::new();
     let auth = try_500!(state.auth.read(), state, req);
 
@@ -76,6 +103,17 @@ pub async fn error_404(req: HttpRequest,
 
     return HttpResponse::NotFound()
         .body(try_500!(state.tera.render("404.html", &context), state, req));
+}
+
+pub fn error_401_russia(req: HttpRequest,
+                        state: web::Data<State<'_>>) -> HttpResponse {
+    let mut context = Context::new();
+    let auth = try_500!(state.auth.read(), state, req);
+
+    context.insert("authorized", &auth.authorized(&req));
+
+    return HttpResponse::Unauthorized()
+        .body(try_500!(state.tera.render("401_russia.html", &context), state, req));
 }
 
 pub fn error_emergency_500() -> HttpResponse {
